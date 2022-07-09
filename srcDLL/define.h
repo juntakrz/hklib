@@ -5,6 +5,12 @@
 
 #define LOG_ERROR() std::cout << "Error code: " << GetLastError() << "\n"
 
+#ifdef MAKEDLL
+#define EXPORT __declspec(dllexport)
+#else
+#define EXPORT __declspec(dllimport)
+#endif
+
 enum bufferType { none = 0, exec, icon };
 
 #pragma pack(push, 2)
