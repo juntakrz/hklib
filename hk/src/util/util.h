@@ -3,6 +3,11 @@
 namespace util {
 
 template <typename T>
+bool checkFlag(T flags, uint8_t pos) noexcept {
+  return flags & (1 << pos);
+}
+
+template <typename T>
 T RVAToOffset(PIMAGE_NT_HEADERS pNTHdr, T RVA) noexcept {
   PIMAGE_SECTION_HEADER pSecHdr = IMAGE_FIRST_SECTION(pNTHdr);
   WORD numSections = pNTHdr->FileHeader.NumberOfSections;
@@ -43,5 +48,8 @@ float calcShannonEntropy(PBYTE pBuffer, T bufferSize) noexcept {
 
   return sigma;
 }
+
+std::string getFullPath(const char* relativePath) noexcept;
+std::wstring getFullPath(const wchar_t* relativePath) noexcept;
 
 }  // namespace util
