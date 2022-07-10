@@ -105,6 +105,7 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -130,19 +131,12 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="srcDLL\CBufferProc.cpp" />
-    <ClCompile Include="srcDLL\CFileProc.cpp" />
-    <ClCompile Include="srcDLL\main.cpp" />
-    <ClCompile Include="srcDLL\mainFuncs.cpp" />
-    <ClCompile Include="srcDLL\pch.cpp" />
+    <ClCompile Include="src\dllmain.cpp" />
+    <ClCompile Include="src\pch.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="srcDLL\CBufferProc.h" />
-    <ClInclude Include="srcDLL\CFileProc.h" />
-    <ClInclude Include="srcDLL\define.h" />
-    <ClInclude Include="srcDLL\mainFuncs.h" />
-    <ClInclude Include="srcDLL\pch.h" />
-    <ClInclude Include="srcDLL\util.h" />
+    <ClInclude Include="src\define.h" />
+    <ClInclude Include="src\pch.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

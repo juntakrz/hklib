@@ -15,8 +15,10 @@ void CFileProc::openFile(const std::wstring& path) noexcept {
   DWORD lastError = 0;
   m_filePath = path;
 
-  m_hFile = CreateFileW(path.c_str(), GENERIC_READ | GENERIC_WRITE, 0, 0,
+  m_hFile = CreateFileW(path.c_str(), GENERIC_READ, 0, 0,
                         OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
+
+  lastError = GetLastError();
 
   // check if file exists
   if (lastError = GetLastError() == ERROR_FILE_NOT_FOUND) {
@@ -86,7 +88,7 @@ void CFileProc::openFile(const std::wstring& path) noexcept {
     }
   }
 
-  wLOG("Successfuly read '" << m_filePath << "', size: " << m_bufferSize << " bytes.");
+  wLOG("Successfuly read '" << m_filePath << ", size: " << m_bufferSize << " bytes.");
 }
 
 void CFileProc::saveFile(const std::wstring& path) noexcept {
@@ -97,13 +99,13 @@ void CFileProc::saveFile(const std::wstring& path) noexcept {
                              0, 0, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, 0);
 
   if (!WriteFile(hFile, m_pBuffer.get(), m_bufferSize, &bytesOut, 0)) {
-    wLOG(L"ERROR: couldn't create file using provided path: " << path);
+    wLOG("ERROR: couldn't create file using provided path: " << path);
     exit(404);
   };
 
   CloseHandle(hFile);
 
-  wLOG(L"Created file '" << path << "', " << bytesOut << " bytes written.");
+  wLOG("Created file '" << path << "', " << bytesOut << " bytes written.");
 }
 
 void CFileProc::getBuffer(BYTE* out_pBuffer, DWORD& out_bufferSize) noexcept {

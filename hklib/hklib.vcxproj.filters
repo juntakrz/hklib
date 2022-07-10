@@ -15,39 +15,30 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="srcDLL\CBufferProc.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="srcDLL\CFileProc.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="srcDLL\main.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="srcDLL\mainFuncs.cpp">
+    <ClCompile Include="srcDLL\dllmain.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="srcDLL\pch.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\dllmain.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\pch.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="srcDLL\CBufferProc.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="srcDLL\CFileProc.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="srcDLL\define.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="srcDLL\mainFuncs.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="srcDLL\pch.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="srcDLL\util.h">
+    <ClInclude Include="src\define.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\pch.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
