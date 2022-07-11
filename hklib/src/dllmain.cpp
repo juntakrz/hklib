@@ -1,14 +1,12 @@
 #include "pch.h"
 #include "define.h"
 
-EXPORT void dasInjector() noexcept;
+EXPORT BOOL APIENTRY
+    DllMain(HINSTANCE hInst, DWORD fdwReason, LPVOID lpReserved) {
 
-BOOL WINAPI DLLMain (HINSTANCE hInstDll, DWORD fdwReason, LPVOID lpReserver){
-
-  //
   switch (fdwReason) {
     case DLL_PROCESS_ATTACH: {
-      dasInjector();
+      MessageBoxA(0, "This program just got injected with a DLL.", "SUCCESS", MB_OK | MB_ICONINFORMATION);
       break;
     }
     case DLL_THREAD_ATTACH: {
@@ -23,8 +21,4 @@ BOOL WINAPI DLLMain (HINSTANCE hInstDll, DWORD fdwReason, LPVOID lpReserver){
   }
 
   return TRUE;
-}
-
-EXPORT void dasInjector() noexcept {
-  MessageBoxA(nullptr, "Hooked", "Important message", MB_OK);
 }

@@ -15,12 +15,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="srcDLL\dllmain.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="srcDLL\pch.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\dllmain.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -29,12 +23,6 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="srcDLL\define.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="srcDLL\pch.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="src\define.h">
       <Filter>Header Files</Filter>
     </ClInclude>

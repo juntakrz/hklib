@@ -19,16 +19,20 @@ void CBufferProc::attach(CFileProc* pFP) noexcept {
 }
 
 void CBufferProc::attach(DWORD procID) noexcept {
-  
-  //HANDLE hProc = CreateToolhelp32Snapshot(TH32CS_SNAPALL, procID);
+  /*
+  HANDLE hProcSnap = CreateToolhelp32Snapshot(
+      TH32CS_SNAPMODULE, procID);
+  PROCESSENTRY32 pe32;
+  pe32.dwSize = sizeof(PROCESSENTRY32);
+  Process32First(hProcSnap, &pe32);*/
+
   HANDLE hProc = nullptr;
   HMODULE lphModule = { nullptr };
   DWORD cbRequired = 0;
   wchar_t modulePath[MAX_PATH] = {0};
-
+  
   printf("Accessing process with PID %d...\t", procID);
 
-  
   if (!(hProc = OpenProcess(PROCESS_ALL_ACCESS, FALSE, procID))) {
     printf("Failure.\n");
     ERRCHK;
@@ -48,7 +52,7 @@ void CBufferProc::attach(DWORD procID) noexcept {
   }
 
   printf("Retrieved path to process: '%ls'\n", modulePath);
-
+  
   m_bufferName = modulePath;
   m_pBuffer = (PBYTE)lphModule;
 

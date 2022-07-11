@@ -143,23 +143,30 @@ int inject(const DWORD& procID) noexcept {
   HANDLE hRThread = nullptr;
   DWORD idRThread = 0;
   HMODULE hKernel = nullptr;
-  FARPROC funcAddr = NULL;
+  LPTHREAD_START_ROUTINE LLAddr = nullptr;
   LPVOID lpBaseAddr = nullptr;
-  BOOL writeMemResult = FALSE;
   SIZE_T bytesWritten = 0;
+  //const char* dllPath = "c:\\Users\\krz\\Desktop\\hklib.dll";
   const char* dllPath = "hklib.dll";
+  std::string fullPath = "";
 
-  std::string moduleName = "Kernel32.dll";
+  std::string moduleName = "kernel32";
   std::string funcName = "LoadLibraryA";
 
-  printf("Opening process (ID %d)...\t", procID);
+  {
+    char buffer[MAX_PATH] = {};
+    GetFullPathNameA(dllPath, MAX_PATH, buffer, nullptr);
+    fullPath = std::string(buffer);
+  }
+
+  printf("Opening process (PID %d)...\t", procID);
 
   if (!(hProc = OpenProcess(PROCESS_ALL_ACCESS, FALSE, procID))) {
     printf("Failure.\n");
     ERRCHK;
   }
 
-  printf("Success.\nProcess ID %d, instance: 0x%p\n", procID, hProc);
+  printf("Success.\nPID %d, instance: 0x%p\n", procID, hProc);
 
   if (!(hKernel = GetModuleHandleA(moduleName.c_str()))) {
     printf("'%s' is not loaded by the process.\n", moduleName.c_str());
@@ -168,43 +175,45 @@ int inject(const DWORD& procID) noexcept {
 
   printf("Library '%s' at 0x%p\n", moduleName.c_str(), hKernel);
 
-  if (!(funcAddr = GetProcAddress(hKernel, funcName.c_str()))) {
-    printf("'%s' is not used by the process.\n", funcName.c_str());
+  if (!(LLAddr = (LPTHREAD_START_ROUTINE)GetProcAddress(hKernel, funcName.c_str()))) {
+    printf("Failed to detect '%s' in memory.\n", funcName.c_str());
     ERRCHK;
   }
 
-  printf("Function '%s' at 0x%p\n", funcName.c_str(), funcAddr);
+  printf("Function '%s\\%s' at 0x%p\n", moduleName.c_str(), funcName.c_str(), LLAddr);
 
-  if (!(lpBaseAddr = VirtualAllocEx(hProc, NULL, 256u, MEM_COMMIT | MEM_RESERVE,
+  if (!(lpBaseAddr = VirtualAllocEx(hProc, NULL, fullPath.size(), MEM_COMMIT | MEM_RESERVE,
                                     PAGE_READWRITE))) {
+    printf("Failed to allocate additional memory for PID %p.\n", hProc);
     ERRCHK;
   }
 
-  printf("Allocated memory at 0x%p\nWriting memory...\t", lpBaseAddr);
+  printf("Allocated %zu bytes for sending dll path at 0x%p\nWriting memory...\t\t", fullPath.size(), lpBaseAddr);
 
-  if (!(writeMemResult =
-            WriteProcessMemory(hProc, lpBaseAddr, (LPCVOID)dllPath,
-                               sizeof(dllPath) + 1, &bytesWritten))) {
+  if (!(WriteProcessMemory(hProc, lpBaseAddr, (LPCVOID)fullPath.c_str(),
+                               fullPath.size(), &bytesWritten))) {
     printf("Failure.\n");
     ERRCHK;
   }
 
-  printf("Success.\nInjected %llu bytes at %p in process ID %d.\n", bytesWritten,
-         lpBaseAddr, procID);
+  printf("Success.\nInjected dll path '%s' (%llu bytes) at %p in process ID %d.\n",
+            fullPath.c_str(), bytesWritten, lpBaseAddr, procID);
 
-  if (!(hRThread = CreateRemoteThread(hProc, NULL, NULL,
-                                      (LPTHREAD_START_ROUTINE)funcAddr,
-                                      lpBaseAddr, 0, &idRThread))) {
+  if (!(hRThread = CreateRemoteThread(hProc, nullptr, NULL, LLAddr,
+                                      lpBaseAddr, NULL, &idRThread))) {
     ERRCHK;
   };
 
   printf("Created remote thread (ID %d)\n", idRThread);
+
+  WaitForSingleObject(hRThread, INFINITE);
 
   printf("\nPress ANY key to exit.\n");
 
   _getch();
 
   if (hProc) {
+    VirtualFreeEx(hProc, lpBaseAddr, 0, MEM_RELEASE);
     CloseHandle(hProc);
   }
 
