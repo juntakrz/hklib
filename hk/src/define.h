@@ -2,8 +2,10 @@
 
 #include "pch.h"
 
-#define LOG(x) std::cout << x << "\n"
-#define wLOG(x) std::wcout << x << "\n"
+#define LOG(x)		std::cout << x << "\n"
+#define wLOG(x)		std::wcout << x << "\n"
+#define LOGn(x)		std::cout << x
+#define wLOGn(x)	std::wcout << x
 
 #define ERRCHK                  \
   { DWORD error = GetLastError();	\

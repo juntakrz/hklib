@@ -26,4 +26,4 @@ DWORD		getProcessID(const wchar_t* process) noexcept;	// resolve PID from proces
 uint64_t	getDLLBaseAddr() noexcept;						// base address of the injected DLL
 DWORD		getDLLExportOffset(LPCSTR funcName) noexcept;	// address of declared export function (requires injectDLL() first)
 
-void		presentResults() noexcept;  //OBSOLETE
+void		presentResults() noexcept;

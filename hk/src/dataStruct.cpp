@@ -47,3 +47,8 @@ DWORD SGlobalData::offsetOf(LPCSTR function) noexcept {
 
   return -1;
 }
+
+void SImportData::clear() noexcept {
+  modules.clear();
+  functions.clear();
+}

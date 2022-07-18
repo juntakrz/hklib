@@ -28,6 +28,8 @@ struct SGlobalData {
 struct SImportData {
   std::vector<std::string> modules;
   std::map<std::string, std::vector<std::string>> functions;
+
+  void clear() noexcept;
 };
 
 extern SGlobalData global;
