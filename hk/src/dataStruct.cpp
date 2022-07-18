@@ -1,11 +1,11 @@
 #include "pch.h"
 #include "appf.h"
-#include "dataStruct.h"
+#include "datastruct.h"
 
-SGlobalData global;
-SImportData dataImport;
+dtGlobal global;
+dtImport dataImport;
 
-BOOL SGlobalData::addFunction(LPCSTR function) noexcept {
+BOOL dtGlobal::addFunction(LPCSTR function) noexcept {
   if (remoteFunctions.try_emplace(function).second) {
     remoteFunctions.at(function) = 0;
     return true;
@@ -14,7 +14,7 @@ BOOL SGlobalData::addFunction(LPCSTR function) noexcept {
   return false;
 }
 
-BOOL SGlobalData::removeFunction(LPCSTR function) noexcept {
+BOOL dtGlobal::removeFunction(LPCSTR function) noexcept {
   if (remoteFunctions.find(function) != remoteFunctions.end()) {
     remoteFunctions.erase(function);
     return true;
@@ -23,7 +23,7 @@ BOOL SGlobalData::removeFunction(LPCSTR function) noexcept {
   return false;
 }
 
-BOOL SGlobalData::storeOffset(LPCSTR function, DWORD offset) noexcept {
+BOOL dtGlobal::storeOffset(LPCSTR function, DWORD offset) noexcept {
   if (remoteFunctions.find(function) != remoteFunctions.end()) {
     remoteFunctions.at(function) = offset;
     return true;
@@ -32,13 +32,13 @@ BOOL SGlobalData::storeOffset(LPCSTR function, DWORD offset) noexcept {
   return false;
 }
 
-void SGlobalData::updateOffsets() noexcept {
+void dtGlobal::updateOffsets() noexcept {
   for (auto& it : remoteFunctions) {
-    it.second = getDLLExportOffset(it.first.c_str());
+    it.second = hk_dll::getExportOffset(it.first.c_str());
   }
 }
 
-DWORD SGlobalData::offsetOf(LPCSTR function) noexcept {
+DWORD dtGlobal::offsetOf(LPCSTR function) noexcept {
   if (remoteFunctions.find(function) != remoteFunctions.end()) {
     return remoteFunctions.at(function);
   }
@@ -46,4 +46,9 @@ DWORD SGlobalData::offsetOf(LPCSTR function) noexcept {
   LOG("ERROR: function '" << function << "' not found in the database.");
 
   return -1;
+}
+
+void dtImport::clear() noexcept {
+  modules.clear();
+  functions.clear();
 }

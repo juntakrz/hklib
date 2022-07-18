@@ -7,6 +7,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "hk", "hk\hk.vcxproj", "{050
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "hklib", "hklib\hklib.vcxproj", "{4DD56323-E3A5-459B-A180-39282A4E2848}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "shellcode_gen", "shellcode_gen\shellcode_gen.vcxproj", "{B403F72F-12D9-4472-9F05-2E005D8C0501}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -31,6 +33,14 @@ Global
 		{4DD56323-E3A5-459B-A180-39282A4E2848}.Release|x64.Build.0 = Release|x64
 		{4DD56323-E3A5-459B-A180-39282A4E2848}.Release|x86.ActiveCfg = Release|Win32
 		{4DD56323-E3A5-459B-A180-39282A4E2848}.Release|x86.Build.0 = Release|Win32
+		{B403F72F-12D9-4472-9F05-2E005D8C0501}.Debug|x64.ActiveCfg = Debug|x64
+		{B403F72F-12D9-4472-9F05-2E005D8C0501}.Debug|x64.Build.0 = Debug|x64
+		{B403F72F-12D9-4472-9F05-2E005D8C0501}.Debug|x86.ActiveCfg = Debug|Win32
+		{B403F72F-12D9-4472-9F05-2E005D8C0501}.Debug|x86.Build.0 = Debug|Win32
+		{B403F72F-12D9-4472-9F05-2E005D8C0501}.Release|x64.ActiveCfg = Release|x64
+		{B403F72F-12D9-4472-9F05-2E005D8C0501}.Release|x64.Build.0 = Release|x64
+		{B403F72F-12D9-4472-9F05-2E005D8C0501}.Release|x86.ActiveCfg = Release|Win32
+		{B403F72F-12D9-4472-9F05-2E005D8C0501}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

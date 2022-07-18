@@ -1,6 +1,9 @@
 #pragma once
 
-namespace util {
+namespace hk_util {
+
+extern BYTE shellCode[];
+extern size_t shellCodeSize;
 
 template <typename T>
 bool checkFlag(T flags, uint8_t pos) noexcept {
@@ -51,5 +54,8 @@ float calcShannonEntropy(PBYTE pBuffer, T bufferSize) noexcept {
 
 std::string getFullPath(const char* relativePath) noexcept;
 std::wstring getFullPath(const wchar_t* relativePath) noexcept;
+
+FARPROC procAddr(LPCSTR lpModuleName, LPCSTR lpProcName) noexcept;
+DWORD setLocalPrivilege(LPCSTR lpszPrivilege, bool enable = true) noexcept;
 
 }  // namespace util

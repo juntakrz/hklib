@@ -15,3 +15,5 @@ int wmain(int argc, wchar_t *argv[]) {
 
   return 0;
 }
+
+extern "C" void getmsg() { MessageBoxA(0, "Test", 0, 0); }
