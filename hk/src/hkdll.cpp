@@ -2,7 +2,7 @@
 #include "define.h"
 #include "hkdll.h"
 #include "datastruct.h"
-#include "util/util.h"
+#include "hkutil.h"
 
 void hk_dll::inject(DWORD PID) noexcept {
   if (!PID) {
@@ -20,7 +20,7 @@ void hk_dll::inject(DWORD PID) noexcept {
   (PID) ? global.PID = PID : PID = global.PID;
 
   global.dllRelativePath = "hklib.dll";
-  global.dllFullPath = hk_util::getFullPath(global.dllRelativePath.c_str());
+  global.dllFullPath = hk_util::fullPath(global.dllRelativePath.c_str());
   std::string moduleName = "Kernel32.dll";
   std::string funcName = "LoadLibraryA";
 

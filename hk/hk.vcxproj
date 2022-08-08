@@ -137,15 +137,15 @@
     </ClCompile>
     <ClCompile Include="src\hkdll.cpp" />
     <ClCompile Include="src\hklocal.cpp" />
-    <ClCompile Include="src\util\CBuffer.cpp">
+    <ClCompile Include="src\unused\CBuffer.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Use</PrecompiledHeader>
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">../pch.h</PrecompiledHeaderFile>
     </ClCompile>
-    <ClCompile Include="src\util\pe.cpp" />
-    <ClCompile Include="src\util\util.cpp">
+    <ClCompile Include="src\unused\pe.cpp" />
+    <ClCompile Include="src\hkutil.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Use</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Use</PrecompiledHeader>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">../pch.h</PrecompiledHeaderFile>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">pch.h</PrecompiledHeaderFile>
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|x64'">../pch.h</PrecompiledHeaderFile>
     </ClCompile>
     <ClCompile Include="src\main.cpp">
@@ -172,9 +172,9 @@
     <ClInclude Include="src\hkdll.h" />
     <ClInclude Include="src\hklocal.h" />
     <ClInclude Include="src\pch.h" />
-    <ClInclude Include="src\util\CBuffer.h" />
-    <ClInclude Include="src\util\pe.h" />
-    <ClInclude Include="src\util\util.h" />
+    <ClInclude Include="src\unused\CBuffer.h" />
+    <ClInclude Include="src\unused\pe.h" />
+    <ClInclude Include="src\hkutil.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

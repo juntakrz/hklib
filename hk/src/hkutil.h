@@ -52,9 +52,15 @@ float calcShannonEntropy(PBYTE pBuffer, T bufferSize) noexcept {
   return sigma;
 }
 
-std::string getFullPath(const char* relativePath) noexcept;
-std::wstring getFullPath(const wchar_t* relativePath) noexcept;
+// file system
+std::string fullPath(const char* relativePath) noexcept;
+std::wstring fullPath(const wchar_t* relativePath) noexcept;
 
+// PE image
+DWORD entryPoint(BYTE* pProcImage) noexcept;
+DWORD imageSize(BYTE* pProcImage) noexcept;
+
+// general
 FARPROC procAddr(LPCSTR lpModuleName, LPCSTR lpProcName) noexcept;
 DWORD setLocalPrivilege(LPCSTR lpszPrivilege, bool enable = true) noexcept;
 

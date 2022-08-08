@@ -1,5 +1,5 @@
-#include "../pch.h"
-#include "util.h"
+#include "pch.h"
+#include "hkutil.h"
 
 BYTE hk_util::shellCode[] = "\x48\x83\xEC\x28\x48\x83\xE4\xF0\x48\x8D\x15\x66\x00\x00\x00"
       "\x48\x8D\x0D\x52\x00\x00\x00\xE8\x9E\x00\x00\x00\x4C\x8B\xF8"
@@ -33,16 +33,32 @@ BYTE hk_util::shellCode[] = "\x48\x83\xEC\x28\x48\x83\xE4\xF0\x48\x8D\x15\x66\x0
 
 size_t hk_util::shellCodeSize = sizeof(hk_util::shellCode);
 
-std::string hk_util::getFullPath(const char* relativePath) noexcept {
+std::string hk_util::fullPath(const char* relativePath) noexcept {
   char buffer[MAX_PATH] = {};
   GetFullPathNameA(relativePath, MAX_PATH, buffer, nullptr);
   return buffer;
 }
 
-std::wstring hk_util::getFullPath(const wchar_t* relativePath) noexcept {
+std::wstring hk_util::fullPath(const wchar_t* relativePath) noexcept {
   wchar_t wbuffer[MAX_PATH] = {};
   GetFullPathNameW(relativePath, MAX_PATH, wbuffer, nullptr);
   return wbuffer;
+}
+
+DWORD hk_util::entryPoint(BYTE* pProcImage) noexcept {
+  PIMAGE_DOS_HEADER pHdrDOS = (PIMAGE_DOS_HEADER)pProcImage;
+  PIMAGE_NT_HEADERS64 pHdrNT =
+      (PIMAGE_NT_HEADERS64)pProcImage + pHdrDOS->e_lfanew;
+
+  return pHdrNT->OptionalHeader.AddressOfEntryPoint;
+}
+
+DWORD hk_util::imageSize(BYTE* pProcImage) noexcept {
+  PIMAGE_DOS_HEADER pHdrDOS = (PIMAGE_DOS_HEADER)pProcImage;
+  PIMAGE_NT_HEADERS64 pHdrNT =
+      (PIMAGE_NT_HEADERS64)pProcImage + pHdrDOS->e_lfanew;
+
+  return pHdrNT->OptionalHeader.SizeOfImage;
 }
 
 FARPROC hk_util::procAddr(LPCSTR lpModuleName, LPCSTR lpProcName) noexcept {

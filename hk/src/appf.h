@@ -1,7 +1,7 @@
 #pragma once
 
 #include "define.h"
-#include "util/util.h"
+#include "hkutil.h"
 #include "hklocal.h"
 #include "hkdll.h"
 

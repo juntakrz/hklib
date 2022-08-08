@@ -21,32 +21,46 @@ enum callFlags {
   CALL_NO_RETURN	= 1 << 2	// don't return a DWORD result from thread
 };
 
-// WinAPI function ptr aliases
-using TCreateSection = NTSTATUS(NTAPI*)(
+/* WinAPI internal function ptr aliases (should work for both Nt* and Zw* functions)
+* EXAMPLE:
+* HANDLE hProcess = <some target process>
+* TSuspendProcess hkSuspendProcess = (TSuspendProcess)hk_util::procAddr("ntdll", "NtSuspendProcess");
+* hkSuspendProcess(hProcess);
+*/
+
+using TCreateSection = NTSTATUS(NTAPI *)(
     OUT PHANDLE SectionHandle, IN ULONG DesiredAccess,
     IN OPTIONAL POBJECT_ATTRIBUTES ObjectAttributes,
     IN OPTIONAL PLARGE_INTEGER MaximumSize, IN ULONG SectionPageProtection,
     IN ULONG AllocationAttributes, IN OPTIONAL HANDLE FileHandle);
 
-using TMapViewOfSection = NTSTATUS(NTAPI*)(
+using TMapViewOfSection = NTSTATUS(NTAPI *)(
     IN HANDLE SectionHandle, IN HANDLE ProcessHandle, IN OUT PVOID* BaseAddress,
     IN ULONG_PTR ZeroBits, IN SIZE_T CommitSize,
     IN OUT OPTIONAL PLARGE_INTEGER SectionOffset, IN OUT PSIZE_T ViewSize,
     IN DWORD InheritDisposition, IN ULONG AllocationType,
     IN ULONG Win32Protect);
 
-using TGetContextThread = NTSTATUS(NTAPI*)(IN HANDLE ThreadHandle,
-                                           OUT PCONTEXT pContext);
+using TUnmapViewOfSection = NTSTATUS(NTAPI *)(IN HANDLE ProcessHandle, IN PVOID BaseAddr);
 
-using TQueryInformationProcess = NTSTATUS(NTAPI*)(
+using TSetContextThread = NTSTATUS(NTAPI *)(IN HANDLE ThreadHandle, IN PCONTEXT pContext);
+
+using TGetContextThread = NTSTATUS(NTAPI *)(IN HANDLE ThreadHandle, OUT PCONTEXT pContext);
+
+using TQueryInformationProcess = NTSTATUS(NTAPI *)(
     IN HANDLE ProcessHandle, IN PROCESSINFOCLASS ProcessInformationClass,
     OUT PVOID ProcessInformation, IN ULONG ProcessInformationLength,
     OUT OPTIONAL PULONG ReturnLength);
 
 using TCreateUserThread =
-    NTSTATUS(NTAPI*)(IN HANDLE ProcessHandle,
+    NTSTATUS(NTAPI *)(IN HANDLE ProcessHandle,
                      IN OPTIONAL PSECURITY_DESCRIPTOR SecurityDescriptor,
                      IN BOOLEAN CreateSuspended, IN ULONG StackZeroBits,
                      IN OUT PULONG StackReserved, IN OUT PULONG StackCommit,
                      IN PVOID StartAddress, IN OPTIONAL PVOID StartParameter,
                      OUT PHANDLE ThreadHandle, OUT CLIENT_ID* ClientID);
+
+using TSuspendProcess = NTSTATUS(NTAPI *)(IN HANDLE ProcessHandle);
+using TResumeProcess = NTSTATUS(NTAPI *)(IN HANDLE ProcessHandle);
+
+/* * */

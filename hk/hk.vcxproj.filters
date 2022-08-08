@@ -30,13 +30,13 @@
     <ClCompile Include="src\datastruct.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\util\util.cpp">
+    <ClCompile Include="src\hkutil.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\util\CBuffer.cpp">
+    <ClCompile Include="src\unused\CBuffer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\util\pe.cpp">
+    <ClCompile Include="src\unused\pe.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\hklocal.cpp">
@@ -53,7 +53,7 @@
     <ClInclude Include="src\define.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\util\util.h">
+    <ClInclude Include="src\hkutil.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\appf.h">
@@ -62,10 +62,10 @@
     <ClInclude Include="src\datastruct.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\util\CBuffer.h">
+    <ClInclude Include="src\unused\CBuffer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\util\pe.h">
+    <ClInclude Include="src\unused\pe.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\hklocal.h">
