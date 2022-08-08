@@ -40,5 +40,15 @@ struct dtImport {
   void clear() noexcept;
 };
 
+struct hkShellCode {
+  unsigned char* pData = nullptr;
+  size_t size = 0;
+
+  hkShellCode(void* ptrToData, size_t sizeOfData) {
+    pData = (unsigned char*)ptrToData;
+    size = sizeOfData;
+  }
+};
+
 extern dtGlobal global;
 extern dtImport dataImport;

@@ -25,6 +25,10 @@ hkTarget::hkTarget(const char* procPath) : m_procPath(procPath) {
   LOG("SUCCESS: Target process (PID " << m_procInfo.dwProcessId << ") created and is ready for action.\n");
 }
 
+NTSTATUS hkTarget::resetContext() noexcept {
+  return hkSetContextThread(m_procInfo.hThread, &m_ctx);
+}
+
 const HANDLE& hkTarget::hProcess() const noexcept {
   return m_procInfo.hProcess;
 }
@@ -52,11 +56,9 @@ DWORD hkTarget::init() noexcept {
   SIZE_T bytesRead = 0;
   DWORD lastError = 0;
   DWORD64 PEBImageOffset = 0;
-  m_pData = std::make_unique<BYTE[]>(bufSize);
 
-  TQueryInformationProcess hkQueryInformationProcess =
-      (TQueryInformationProcess)hk_util::procAddr("ntdll",
-                                                  "NtQueryInformationProcess");
+  m_pData = std::make_unique<BYTE[]>(bufSize);
+  m_ctx.ContextFlags = CONTEXT_FULL;
 
   if (!CreateProcessA(m_procPath.c_str(), NULL, NULL, NULL, TRUE,
                       CREATE_SUSPENDED | CREATE_NO_WINDOW, NULL, NULL,
@@ -64,6 +66,11 @@ DWORD hkTarget::init() noexcept {
     LOG("ERROR: Failed to create process '" << m_procPath << "'.");
     return GetLastError();
   }
+
+  if (hkGetContextThread(m_procInfo.hThread, &m_ctx)) {
+    LOG("ERROR: Failed to get target thread context.");
+    return GetLastError();
+  };
 
   if (!OpenProcess(PROCESS_ALL_ACCESS, FALSE, m_procInfo.dwProcessId)) {
     LOG("ERROR: Failed to open process with ID: "
