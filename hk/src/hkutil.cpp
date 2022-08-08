@@ -45,22 +45,6 @@ std::wstring hk_util::fullPath(const wchar_t* relativePath) noexcept {
   return wbuffer;
 }
 
-DWORD hk_util::entryPoint(BYTE* pProcImage) noexcept {
-  PIMAGE_DOS_HEADER pHdrDOS = (PIMAGE_DOS_HEADER)pProcImage;
-  PIMAGE_NT_HEADERS64 pHdrNT =
-      (PIMAGE_NT_HEADERS64)pProcImage + pHdrDOS->e_lfanew;
-
-  return pHdrNT->OptionalHeader.AddressOfEntryPoint;
-}
-
-DWORD hk_util::imageSize(BYTE* pProcImage) noexcept {
-  PIMAGE_DOS_HEADER pHdrDOS = (PIMAGE_DOS_HEADER)pProcImage;
-  PIMAGE_NT_HEADERS64 pHdrNT =
-      (PIMAGE_NT_HEADERS64)pProcImage + pHdrDOS->e_lfanew;
-
-  return pHdrNT->OptionalHeader.SizeOfImage;
-}
-
 FARPROC hk_util::procAddr(LPCSTR lpModuleName, LPCSTR lpProcName) noexcept {
   return GetProcAddress(GetModuleHandleA(lpModuleName), lpProcName);
 }

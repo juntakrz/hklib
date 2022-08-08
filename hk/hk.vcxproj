@@ -135,8 +135,15 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Use</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Use</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="src\hkdll.cpp" />
-    <ClCompile Include="src\hklocal.cpp" />
+    <ClCompile Include="src\hkdll.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Use</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="src\hklocal.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Use</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="src\hktarget.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Use</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include="src\unused\CBuffer.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Use</PrecompiledHeader>
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">../pch.h</PrecompiledHeaderFile>
@@ -171,6 +178,7 @@
     <ClInclude Include="src\appf.h" />
     <ClInclude Include="src\hkdll.h" />
     <ClInclude Include="src\hklocal.h" />
+    <ClInclude Include="src\hktarget.h" />
     <ClInclude Include="src\pch.h" />
     <ClInclude Include="src\unused\CBuffer.h" />
     <ClInclude Include="src\unused\pe.h" />
