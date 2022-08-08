@@ -9,11 +9,11 @@ void init(HINSTANCE hInst) noexcept {
   // get base address of the host
   dataLocal.pBaseAddr = (PBYTE)GetModuleHandleA(NULL);
 
-  /*
+  
   LPVOID pFunc0 =
     getIATEntry("GDI32.dll", "GetPixel");
 
-  replaceIATEntry(pFunc0, hijack);*/
+  replaceIATEntry(pFunc0, hijack);
 }
 
 EXPORT BOOL APIENTRY

@@ -2,7 +2,7 @@
 
 #include "define.h"
 
-struct SGlobalData {
+struct dtGlobal {
   DWORD PID = 0;
 
   HANDLE hProc = NULL;
@@ -25,10 +25,20 @@ struct SGlobalData {
   DWORD offsetOf(LPCSTR function) noexcept;
 };
 
-struct SImportData {
-  std::vector<std::string> modules;
-  std::map<std::string, std::vector<std::string>> functions;
+struct SFuncData {
+  std::string sName = "";
+  DWORD dwOffset = 0;
+  DWORD dwDataSize = 0;
 };
 
-extern SGlobalData global;
-extern SImportData dataImport;
+struct dtImport {
+  std::vector<std::string> modules;
+  std::map<std::string, std::vector<SFuncData>> functionsEx;
+
+  std::map<std::string, std::vector<std::string>> functions;  // to be replaced with functionsEx data structure
+
+  void clear() noexcept;
+};
+
+extern dtGlobal global;
+extern dtImport dataImport;

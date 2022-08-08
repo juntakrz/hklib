@@ -1,8 +1,10 @@
 #include "pch.h"
-#include "appf.h"
-#include "dataStruct.h"
+#include "define.h"
+#include "hkdll.h"
+#include "datastruct.h"
+#include "util/util.h"
 
-void dllInject(DWORD PID) noexcept {
+void hk_dll::inject(DWORD PID) noexcept {
   if (!PID) {
     LOG("ERROR: invalid process ID. Either the process is not running or "
         "couldn't be detected.");
@@ -18,7 +20,7 @@ void dllInject(DWORD PID) noexcept {
   (PID) ? global.PID = PID : PID = global.PID;
 
   global.dllRelativePath = "hklib.dll";
-  global.dllFullPath = util::getFullPath(global.dllRelativePath.c_str());
+  global.dllFullPath = hk_util::getFullPath(global.dllRelativePath.c_str());
   std::string moduleName = "Kernel32.dll";
   std::string funcName = "LoadLibraryA";
 
@@ -48,29 +50,29 @@ void dllInject(DWORD PID) noexcept {
 
   WaitForSingleObject(global.hTInject, INFINITE);
 
-  global.dllBaseAddr = getDLLBaseAddr();
+  global.dllBaseAddr = hk_dll::getBaseAddr();
   global.addFunction("ejectDLL");
   global.updateOffsets();
 
   LOG("Injected DLL is ready to accept calls.");
 }
 
-void dllEject() noexcept {
+void hk_dll::eject() noexcept {
   if (global.hLocalDLL) {
     FreeLibrary(global.hLocalDLL);
     global.hLocalDLL = nullptr;
   }
 
   if (global.hProc) {
-    dllCall("ejectDLL", NULL_THREAD, NULL_ID);
+    hk_dll::call("ejectDLL", NULL_THREAD, NULL_ID);
     CloseHandle(global.hTInject);
     VirtualFreeEx(global.hProc, global.pAllocatedArg, 0, MEM_RELEASE);
     CloseHandle(global.hProc);
   }
 }
 
-DWORD dllCall(LPCSTR function, HANDLE& out_hThread, DWORD& out_idThread,
-                      DWORD flags, PBYTE pArg, DWORD sizeArg) noexcept {
+DWORD hk_dll::call(LPCSTR function, HANDLE& out_hThread, DWORD& out_idThread,
+              DWORD flags, PBYTE pArg, DWORD sizeArg) noexcept {
   LPTHREAD_START_ROUTINE lpTSR = nullptr;
   HANDLE hThread = 0;
   DWORD idThread = 0, threadResult = 0;
@@ -123,4 +125,47 @@ DWORD dllCall(LPCSTR function, HANDLE& out_hThread, DWORD& out_idThread,
   }
 
   return -1;
+}
+
+uint64_t hk_dll::getBaseAddr() noexcept {
+  MODULEENTRY32W me{};
+  me.dwSize = sizeof(MODULEENTRY32W);
+
+  HANDLE hSnapshot = CreateToolhelp32Snapshot(
+      TH32CS_SNAPMODULE | TH32CS_SNAPMODULE32, global.PID);
+
+  if (!(hSnapshot == INVALID_HANDLE_VALUE)) {
+    do {
+      if (me.szModule == global.dllName) {
+        global.dllBaseAddr = (uint64_t)me.modBaseAddr;
+        if (!CloseHandle(hSnapshot)) {
+          ERRCHK;
+        };
+        return global.dllBaseAddr;
+      }
+    } while (Module32NextW(hSnapshot, &me));
+  }
+
+  return 0;
+}
+
+DWORD hk_dll::getExportOffset(LPCSTR funcName) noexcept {
+  if (!global.hLocalDLL) {
+    global.hLocalDLL = LoadLibraryA(global.dllFullPath.c_str());
+
+    if (!global.hLocalDLL) {
+      LOG("ERROR: failed to load '" << global.dllFullPath << "'.\n");
+      ERRCHK;
+    }
+  }
+
+  LPVOID funcAddr = GetProcAddress(global.hLocalDLL, funcName);
+  if (!funcAddr) {
+    LOG("ERROR: failed to locate function '" << funcName << "'.\n");
+    ERRCHK;
+  }
+
+  DWORD offset = (PBYTE)funcAddr - (PBYTE)global.hLocalDLL;
+
+  return offset;
 }

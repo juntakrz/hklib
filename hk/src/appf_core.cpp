@@ -6,8 +6,9 @@ void printHelp() noexcept {
   LOG("USAGE:  hk [process name / id] [-arguments]\n");
   LOG("Arguments:");
   LOG("  -a\t\tanalyze the process and output the data");
-  LOG("\nEXAMPLE: hk -p notepad.exe\tinject into notepad.exe");
-  LOG("\t hk -pid 1377\t\tinject into process with PID 1377");
+  LOG("  -h\t\thollow out the process and inject the test code");
+  LOG("\nEXAMPLE: hk notepad.exe\tinject into notepad.exe");
+  LOG("\t hk 1377 -a\t\tinject into process with PID 1377 and retrieve its data");
   LOG("\nPress ANY key to exit.");
   _getch();
 
@@ -16,42 +17,54 @@ void printHelp() noexcept {
 
 int parseArgs(int argc, wchar_t* argv[]) {
   
+  if (argc < 2) {
+    printHelp();
+  }
+
   global.dllName = L"hklib.dll";
 
   DWORD PID;
-  std::vector<std::wstring> argList;
   const std::wregex rNumbers(L"0-9");
+  std::wstring processArg(argv[1]);
 
-  for (int i = 1; i < argc; i++) {
-    argList.emplace_back(argv[i]);
-  }
-
-  if(!std::regex_match(argList[0].begin(), argList[0].end(), rNumbers)) {
-    PID = getProcessID(argList[0].c_str());
+  if (!std::regex_match(processArg.begin(), processArg.end(), rNumbers)) {
+    PID = getProcessID(processArg.c_str());
   } else {
-    PID = wcstol(argList[0].c_str(), nullptr, 10);
+    PID = wcstol(processArg.c_str(), nullptr, 10);
   }
 
-  dllInject(PID);
-
+  wchar_t** pCurrentArg = argv + 2;
   wchar_t arg = 0;
-  for (int j = 1; j < argList.size(); j++) {
-    // arguments are in '-X' format, so ignore '-'
-    if (argList[j].size() > 1) {
-      arg = *(argList[j].c_str() + 1);
-      switch (arg) {
-        case 'a': {
-          analyzeTarget();
-          presentResults();
-          break;
-        }
+  while(*pCurrentArg) {
+    // arguments are in '-X' format, so skip '-'
+    arg = *(*pCurrentArg + 1);
+    switch (arg) {
+      case 'a': {
+        hk_dll::inject(PID);
+        analyzeTarget();
+        presentResults();
+        break;
+      }
+      case 'h': {
+        hk_local::hollowTarget(PID);
+        break;
+      }
+      case 't': {
+        testShellCode();
+        break;
+      }
+      default: {
+        hk_dll::inject(PID);
+        break;
       }
     }
+
+    pCurrentArg++;
   }
 
   LOG("\nPress ANY key to exit.");
   _getch();
-  dllEject();
+  hk_dll::eject();      // safe - ignored if DLL wasn't injected
   return 0;
 };
 
@@ -59,13 +72,14 @@ void analyzeTarget() noexcept {
   // init values
   DWORD idThread = 0;
 
-  global.dllBaseAddr = getDLLBaseAddr();
+  global.dllBaseAddr = hk_dll::getBaseAddr();
   global.addFunction("exportPEImageData");
   global.addFunction("freeSharedMemory");
   global.updateOffsets();
 
   HANDLE hExportThread = NULL;
-  DWORD dwDataSize = dllCall("exportPEImageData", hExportThread, NULL_ID, CALL_NO_CLOSE);
+  DWORD dwDataSize =
+      hk_dll::call("exportPEImageData", hExportThread, NULL_ID, CALL_NO_CLOSE);
 
   LOG("Receiving " << dwDataSize << " bytes of data gathered inside the host.");
 
@@ -101,9 +115,41 @@ void analyzeTarget() noexcept {
 
     CloseHandle(hSharedMem);
 
-    dllCall("freeSharedMemory", NULL_THREAD, NULL_ID, 0);
+    hk_dll::call("freeSharedMemory", NULL_THREAD, NULL_ID, 0);
   }
   CloseHandle(hExportThread);
+}
+
+void testShellCode() noexcept {
+    
+  LOG("Testing provided shellcode (hex):");
+  
+  // return x + y * x + y / 100
+  /*BYTE shellCode[] = {0x44, 0x8D, 0x42, 0x01, 0xB8, 0x1F, 0x85, 0xEB,
+                       0x51, 0xF7,
+                    0xEA, 0x44, 0x0F, 0xAF, 0xC1, 0xC1, 0xFA, 0x05, 0x8B, 0xC2,
+                    0xC1, 0xE8, 0x1F, 0x41, 0x03, 0xD0, 0x03, 0xC2, 0xC3, 0x00};
+                    */
+
+  for (size_t i = 0; i < hk_util::shellCodeSize; i++) {
+    std::cout << std::hex << std::uppercase << ((*(hk_util::shellCode + i) < 16) ? "0" : "") << +*(hk_util::shellCode + i) << " ";
+  }
+  std::cout << std::dec << "\n\n";
+
+  int x = 5, y = 1000;
+  void* exec =
+      VirtualAlloc(0, hk_util::shellCodeSize, MEM_COMMIT,
+                            PAGE_EXECUTE_READWRITE);
+  memcpy(exec, hk_util::shellCode, hk_util::shellCodeSize);
+  /*int result =
+      ((int (*)(int, int))exec)(x, y);  // that C/C++ function casting, oh boy
+
+  LOG("x = " << x << ", y = " << y << ".\n" << "x + y * x + y / 100 = " << result);
+  */
+
+  //((void(*)())exec)();
+  using shCodeExec = void(*)();
+  ((shCodeExec)exec)();
 }
 
 void presentResults() noexcept {
