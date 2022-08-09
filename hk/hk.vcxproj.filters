@@ -45,7 +45,7 @@
     <ClCompile Include="src\hkdll.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\hktarget.cpp">
+    <ClCompile Include="src\hkprocess.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -77,7 +77,7 @@
     <ClInclude Include="src\hkdll.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\hktarget.h">
+    <ClInclude Include="src\hkprocess.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
