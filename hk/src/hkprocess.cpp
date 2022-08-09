@@ -5,6 +5,7 @@
 
 hkProcess::hkProcess(const char* procPath) : m_procPath(procPath) {
   DWORD errorCode = 0;      // 0 = no error
+
   if (!procPath) {
     LOG("ERROR: Path to process '" << m_procPath << "' is incorrect.\nPress ANY key to exit");
     _getch();
@@ -27,10 +28,6 @@ hkProcess::hkProcess(const char* procPath) : m_procPath(procPath) {
 
 NTSTATUS hkProcess::resetContext() noexcept { return hkSetContextThread(hThread, &m_ctx); }
 
-const DWORD& hkProcess::imageEntry() const noexcept { return m_imageEntryPoint; }
-
-const DWORD& hkProcess::imageSize() const noexcept { return m_imageSize; }
-
 DWORD hkProcess::init() noexcept {
   // initialziation
   STARTUPINFOA startupInfo{};
@@ -43,7 +40,7 @@ DWORD hkProcess::init() noexcept {
   DWORD lastError = 0;
   DWORD64 PEBImageOffset = 0;
 
-  m_pData = std::make_unique<BYTE[]>(bufSize);
+  pData = std::make_unique<BYTE[]>(bufSize);
   m_ctx.ContextFlags = CONTEXT_FULL;
 
   if (!CreateProcessA(m_procPath.c_str(), NULL, NULL, NULL, TRUE,
@@ -77,7 +74,7 @@ DWORD hkProcess::init() noexcept {
 
   // read PEB from target process memory and store data in a temporary PEB structure
   if (!ReadProcessMemory(hProcess, procBasicInfo.PebBaseAddress,
-                         &m_PEB, sizeof(PEB), nullptr)) {
+                         &hkPEB64, sizeof(hkPEB64), nullptr)) {
     LOG("ERROR: Failed to read process environment block.");
     TerminateProcess(hProcess, 0);
     return GetLastError();
@@ -85,24 +82,24 @@ DWORD hkProcess::init() noexcept {
 
   // process image starts at an offset of +16 bytes (+0x10) from PEB base
   // address, at 'Reserved3[1]'
-  if (!ReadProcessMemory(hProcess, m_PEB.ImageBaseAddress, m_pData.get(),
+  if (!ReadProcessMemory(hProcess, hkPEB64.ImageBaseAddress, pData.get(),
                          bufSize, &bytesRead) ||
       bytesRead != bufSize) {
     LOG("ERROR: Failed to read target image header from address 0x"
-        << std::hex << m_PEB.ImageBaseAddress << " in PEB.");
+        << std::hex << hkPEB64.ImageBaseAddress << " in PEB.");
     TerminateProcess(hProcess, 0);
     return GetLastError();
   }
 
-  WORD e_magic = *(PWORD)m_pData.get();
+  WORD e_magic = *(PWORD)pData.get();
 
-  if (*(PWORD)m_pData.get() != IMAGE_DOS_SIGNATURE) {
+  if (*(PWORD)pData.get() != IMAGE_DOS_SIGNATURE) {
     LOG("ERROR: Incorrect image DOS header. Valid signature not found.");
     TerminateProcess(hProcess, 0);
     return IMAGE_DOS_SIGNATURE;
   }
 
-  PIMAGE_DOS_HEADER pHdrDOS = (PIMAGE_DOS_HEADER)m_pData.get();
+  PIMAGE_DOS_HEADER pHdrDOS = (PIMAGE_DOS_HEADER)pData.get();
   PIMAGE_NT_HEADERS64 pHdrNT =
       PIMAGE_NT_HEADERS64((PBYTE)pHdrDOS + pHdrDOS->e_lfanew);
 
@@ -112,16 +109,16 @@ DWORD hkProcess::init() noexcept {
     return IMAGE_NT_SIGNATURE;
   }
 
-  m_imageEntryPoint = pHdrNT->OptionalHeader.AddressOfEntryPoint;
-  m_imageSize = pHdrNT->OptionalHeader.SizeOfImage;
+  imageEntryPoint = pHdrNT->OptionalHeader.AddressOfEntryPoint;
+  imageSize = pHdrNT->OptionalHeader.SizeOfImage;
 
   // store whole process image for further analysis / manipulation
-  m_pData.release();
-  m_pData = std::make_unique<BYTE[]>(m_imageSize);
+  pData.release();
+  pData = std::make_unique<BYTE[]>(imageSize);
 
-  if (!ReadProcessMemory(hProcess, m_PEB.ImageBaseAddress, m_pData.get(),
-                         m_imageSize, &bytesRead) ||
-      bytesRead != m_imageSize) {
+  if (!ReadProcessMemory(hProcess, hkPEB64.ImageBaseAddress, pData.get(),
+                         imageSize, &bytesRead) ||
+      bytesRead != imageSize) {
     LOG("ERROR: Failed to read and store whole image.");
     TerminateProcess(hProcess, 0);
     return GetLastError();

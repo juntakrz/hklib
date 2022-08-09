@@ -3,10 +3,6 @@
 class hkProcess {
  private:
   std::string m_procPath = "";
-  std::unique_ptr<BYTE[]> m_pData;
-  TPEB64 m_PEB{};
-  DWORD m_imageEntryPoint = 0;
-  DWORD m_imageSize = 0;
   CONTEXT m_ctx{};
 
   TCreateProcess hkCreateProcess =
@@ -21,18 +17,19 @@ class hkProcess {
 
   DWORD init() noexcept;						// read, store and process values from process header
  public:
-
   //PROCESS_INFORMATION clone structure
   HANDLE hProcess = 0;
   HANDLE hThread = 0;
   DWORD dwProcessId = 0;
   DWORD dwThreadId = 0;
 
+  TPEB64 hkPEB64{};
+  DWORD imageEntryPoint = 0;
+  DWORD imageSize = 0;
+  std::unique_ptr<BYTE[]> pData;
+
   hkProcess(const char* procPath);               // create hkProcess instance using PE file on a disk
   hkProcess(DWORD PID = 0);                      // create hkProcess instance using running process
 
   NTSTATUS resetContext() noexcept;				// restore thread context
-
-  const DWORD&	imageEntry() const noexcept;	// entry point of a target process image
-  const DWORD&	imageSize() const noexcept;		// size of a target process image
 };
