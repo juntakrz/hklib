@@ -16,7 +16,7 @@ void createConsole() noexcept {
 
 void outputPEDataToConsole() noexcept {
   std::stringstream sstr;
-  sstr << "Base address: 0x" << dataLocal.pBaseAddr << "\n\n";
+  sstr << "Base address: 0x" << dataLocal.pBaseAddress << "\n\n";
   for (const auto& it_lib : dataImport.modules) {
     sstr << it_lib << ":\n";
     for (const auto& it_func : dataImport.functions.at(it_lib)) {

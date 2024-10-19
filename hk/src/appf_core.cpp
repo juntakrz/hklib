@@ -70,27 +70,29 @@ int parseArgs(int argc, wchar_t* argv[]) {
 };
 
 void analyzeTarget() noexcept {
-  // init values
   DWORD idThread = 0;
 
   global.dllBaseAddr = hk_dll::getBaseAddr();
+
+  if (global.dllBaseAddr == -1) {
+    LOG(logError, "DLL base address is invalid.");
+    exit(404);
+  }
+
   global.addFunction("exportPEImageData");
   global.addFunction("freeSharedMemory");
   global.updateOffsets();
 
   HANDLE hExportThread = NULL;
-  DWORD dwDataSize =
-    hk_dll::call("exportPEImageData", hExportThread, NULL_ID, CALL_NO_CLOSE);
+  DWORD dwDataSize = hk_dll::call("exportPEImageData", hExportThread, NULL_ID, CALL_NO_CLOSE);
 
   LOG(logOK, "Receiving %d bytes of data gathered inside the host.", dwDataSize);
 
   HANDLE hSharedMem = OpenFileMappingA(FILE_MAP_ALL_ACCESS, false, "%HKDATA%");
   if (hSharedMem) {
-    LPVOID lpView =
-      MapViewOfFile(hSharedMem, FILE_MAP_ALL_ACCESS, 0, 0, dwDataSize);
-
     std::vector<std::string> modules;
     std::map<std::string, std::vector<std::string>> functions;
+    LPVOID lpView = MapViewOfFile(hSharedMem, FILE_MAP_ALL_ACCESS, 0, 0, dwDataSize);
 
     PBYTE pCurrent = (PBYTE)lpView;
 
@@ -183,7 +185,7 @@ void presentAnalysisResults() noexcept {
     }
 
     return false;
-    };
+  };
 
   if (!dataImport.modules.empty()) {
     LOG(logOK, "\nLibraries in the import table:\n");

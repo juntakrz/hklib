@@ -11,7 +11,7 @@ void eject() noexcept;                  // ejects DLL from the target process
  * and will return its handle and id. Optional: provide an argument (can be an
  * array of char) and its size to send it to a remote thread
  */
-DWORD call(LPCSTR function, HANDLE& out_hThread, DWORD& out_idThread,
+DWORD call(LPCSTR function, HANDLE& outHThread, DWORD& outIdThread,
               DWORD flags = 0, PBYTE pArg = nullptr,
               DWORD sizeArg = 0) noexcept;
 

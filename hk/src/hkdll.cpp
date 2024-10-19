@@ -31,24 +31,31 @@ void hk_dll::inject(DWORD PID) noexcept {
       (LPTHREAD_START_ROUTINE)GetProcAddress(hKernel, funcName.c_str());
 
   // inject LoadLibraryA with dll path parameter
-  global.hProc = OpenProcess(PROCESS_ALL_ACCESS, FALSE, PID);
-  global.pAllocatedArg =
-      VirtualAllocEx(global.hProc, NULL, global.dllFullPath.size(),
-                     MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
-  WriteProcessMemory(global.hProc, global.pAllocatedArg,
-                     (LPCVOID)global.dllFullPath.c_str(),
-                     global.dllFullPath.size(), &bytesWritten);
+  std::string dllFullPathA;
+  std::transform(global.dllFullPath.begin(), global.dllFullPath.end(), std::back_inserter(dllFullPathA), [](wchar_t c) {
+    return (char)c;
+    }
+  );
+
+  global.hProcess = OpenProcess(PROCESS_ALL_ACCESS, FALSE, PID);
+  global.pAllocatedAddress = VirtualAllocEx(global.hProcess, NULL, dllFullPathA.size(), MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+  WriteProcessMemory(global.hProcess, global.pAllocatedAddress, (LPCVOID)dllFullPathA.c_str(), dllFullPathA.size(), &bytesWritten);
 
   ERRCHK;
 
-  global.hTInject = CreateRemoteThread(global.hProc, NULL, NULL, LLAddr,
-                                       global.pAllocatedArg, NULL, &global.TID);
+  global.hTInject = CreateRemoteThread(global.hProcess, NULL, NULL, LLAddr,global.pAllocatedAddress, NULL, &global.TID);
 
-  LOG(logOK, "'%ls' injected from '%ls'.", global.dllRelativePath.c_str(), global.dllFullPath.c_str());
+  LOG(logOK, "Injecting '%ls' from '%ls'.", global.dllRelativePath.c_str(), global.dllFullPath.c_str());
 
   WaitForSingleObject(global.hTInject, INFINITE);
 
   global.dllBaseAddr = hk_dll::getBaseAddr();
+
+  if (global.dllBaseAddr == -1) {
+    LOG(logError, "DLL injection failed.");
+    exit(404);
+  }
+
   global.addFunction("ejectDLL");
   global.updateOffsets();
 
@@ -61,68 +68,63 @@ void hk_dll::eject() noexcept {
     global.hLocalDLL = nullptr;
   }
 
-  if (global.hProc) {
+  if (global.hProcess) {
     hk_dll::call("ejectDLL", NULL_THREAD, NULL_ID);
     CloseHandle(global.hTInject);
-    VirtualFreeEx(global.hProc, global.pAllocatedArg, 0, MEM_RELEASE);
-    CloseHandle(global.hProc);
+    VirtualFreeEx(global.hProcess, global.pAllocatedAddress, 0, MEM_RELEASE);
+    CloseHandle(global.hProcess);
   }
 }
 
-DWORD hk_dll::call(LPCSTR function, HANDLE& out_hThread, DWORD& out_idThread,
-              DWORD flags, PBYTE pArg, DWORD sizeArg) noexcept {
+DWORD hk_dll::call(LPCSTR function, HANDLE& outHThread, DWORD& outIdThread, DWORD flags, PBYTE pArg, DWORD sizeArg) noexcept {
   LPTHREAD_START_ROUTINE lpTSR = nullptr;
   HANDLE hThread = 0;
   DWORD idThread = 0, threadResult = 0;
-  LPVOID lpArgAddr = nullptr;
+  LPVOID lpArgAddress = nullptr;
 
   std::wstring wideFunctionName;
   hk_util::toWString(function, wideFunctionName);
 
   LOG(logOK, "Calling function '%ls'.", wideFunctionName.c_str());
 
-  lpTSR =
-      LPTHREAD_START_ROUTINE(global.dllBaseAddr + global.offsetOf(function));
+  lpTSR = LPTHREAD_START_ROUTINE(global.dllBaseAddr + global.offsetOf(function));
 
   if (pArg && sizeArg) {
-    lpArgAddr = VirtualAllocEx(global.hProc, NULL, global.dllFullPath.size(),
-                               MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
-
-    WriteProcessMemory(global.hProc, lpArgAddr, (LPCVOID)pArg, sizeArg, NULL);
+    lpArgAddress = VirtualAllocEx(global.hProcess, NULL, global.dllFullPath.size(), MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+    WriteProcessMemory(global.hProcess, lpArgAddress, (LPCVOID)pArg, sizeArg, NULL);
   }
 
   if (lpTSR) {
-    hThread = CreateRemoteThread(global.hProc, NULL, NULL, lpTSR, lpArgAddr,
-                                 NULL, &idThread);
+    hThread = CreateRemoteThread(global.hProcess, NULL, NULL, lpTSR, lpArgAddress, NULL, &idThread);
 
-    if (hThread) {
-      if (!(flags & CALL_NO_WAIT)) {
-        WaitForSingleObject(hThread, INFINITE);
-      }
-
-      if (!(flags & CALL_NO_RETURN)) {
-        GetExitCodeThread(hThread, &threadResult);
-      }
-
-      if (flags & CALL_NO_CLOSE) {
-        if (out_hThread) {
-          out_hThread = hThread;
-        }
-
-        if (out_hThread) {
-          out_idThread = idThread;
-        }
-
-      } else {
-        CloseHandle(hThread);
-      }
-
-      if (lpArgAddr) {
-        VirtualFreeEx(global.hProc, lpArgAddr, 0, MEM_RELEASE);
-      }
-
-      return threadResult;
+    if (!hThread) {
+      return -1;
     }
+
+    if (!(flags & CALL_NO_WAIT)) {
+      WaitForSingleObject(hThread, INFINITE);
+    }
+
+    if (!(flags & CALL_NO_RETURN)) {
+      GetExitCodeThread(hThread, &threadResult);
+    }
+
+    if (flags & CALL_NO_CLOSE) {
+
+      if (outHThread) {
+        outHThread = hThread;
+        outIdThread = idThread;
+      }
+
+    } else {
+      CloseHandle(hThread);
+    }
+
+    if (lpArgAddress) {
+      VirtualFreeEx(global.hProcess, lpArgAddress, 0, MEM_RELEASE);
+    }
+
+    return threadResult;
   }
 
   return -1;
@@ -135,19 +137,24 @@ uint64_t hk_dll::getBaseAddr() noexcept {
   HANDLE hSnapshot = CreateToolhelp32Snapshot(
       TH32CS_SNAPMODULE | TH32CS_SNAPMODULE32, global.PID);
 
-  if (!(hSnapshot == INVALID_HANDLE_VALUE)) {
-    do {
-      if (me.szModule == global.dllName) {
-        global.dllBaseAddr = (uint64_t)me.modBaseAddr;
-        if (!CloseHandle(hSnapshot)) {
-          ERRCHK;
-        };
-        return global.dllBaseAddr;
-      }
-    } while (Module32NextW(hSnapshot, &me));
+  if (hSnapshot == INVALID_HANDLE_VALUE) {
+    LOG(logError, "Failed to retrieve base address for the HK dll.");
+    return -1;
   }
 
-  return 0;
+  do {
+    if (me.szModule == global.dllName) {
+
+      if (!CloseHandle(hSnapshot)) {
+        ERRCHK;
+      };
+
+      return (uint64_t)me.modBaseAddr;
+    }
+  } while (Module32NextW(hSnapshot, &me));
+
+  LOG(logError, "Failed to retrieve base address for the HK dll.");
+  return -1;
 }
 
 DWORD hk_dll::getExportOffset(LPCSTR funcName) noexcept {
@@ -162,7 +169,7 @@ DWORD hk_dll::getExportOffset(LPCSTR funcName) noexcept {
 
   LPVOID funcAddr = GetProcAddress(global.hLocalDLL, funcName);
   if (!funcAddr) {
-    LOG(logError, "failed to locate function '%s'.\n", funcName);
+    LOG(logError, "Failed to locate function '%s'.\n", funcName);
     ERRCHK;
   }
 

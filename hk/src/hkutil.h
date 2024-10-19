@@ -11,9 +11,9 @@ bool checkFlag(T flags, uint8_t pos) noexcept {
 }
 
 template <typename T>
-T RVAToOffset(PIMAGE_NT_HEADERS pNTHdr, T RVA) noexcept {
-  PIMAGE_SECTION_HEADER pSecHdr = IMAGE_FIRST_SECTION(pNTHdr);
-  WORD numSections = pNTHdr->FileHeader.NumberOfSections;
+T RVAToOffset(PIMAGE_NT_HEADERS pNTHeader, T RVA) noexcept {
+  PIMAGE_SECTION_HEADER pSecHdr = IMAGE_FIRST_SECTION(pNTHeader);
+  WORD numSections = pNTHeader->FileHeader.NumberOfSections;
 
   if (RVA == 0) {
     return RVA;

@@ -8,19 +8,19 @@
 #define C_EXPORT extern "C" __declspec(dllimport)
 #endif
 
-struct _DATA_IMPORT {
+struct DATA_IMPORT {
   std::vector<std::string> modules;
   std::map<std::string, std::vector<std::string>> functions;
   DWORD dwDataSize = 0;
 };
 
-struct _DATA_LOCAL {
-  PBYTE						pBaseAddr = nullptr;
-  PIMAGE_DOS_HEADER			pDOSHdr	= nullptr;
-  PIMAGE_NT_HEADERS			pNTHdr	= nullptr;
-  PIMAGE_OPTIONAL_HEADER	pOptHdr = nullptr;
-  HANDLE					hSharedMem = NULL;
+struct DATA_LOCAL {
+  PBYTE						pBaseAddress = nullptr;
+  PIMAGE_DOS_HEADER			pDOSHeader	= nullptr;
+  PIMAGE_NT_HEADERS			pNTHeader	= nullptr;
+  PIMAGE_OPTIONAL_HEADER	pOptionalHeader = nullptr;
+  HANDLE					hSharedMemory = NULL;
 };
 
-extern _DATA_IMPORT dataImport;
-extern _DATA_LOCAL	dataLocal;
+extern DATA_IMPORT dataImport;
+extern DATA_LOCAL	dataLocal;

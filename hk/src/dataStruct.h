@@ -5,10 +5,10 @@
 struct dtGlobal {
   DWORD PID = 0;
 
-  HANDLE hProc = NULL;
+  HANDLE hProcess = NULL;
   HANDLE hTInject = NULL;
   DWORD TID = 0;
-  void* pAllocatedArg = NULL;
+  void* pAllocatedAddress = NULL;
 
   HMODULE hLocalDLL = nullptr;
 

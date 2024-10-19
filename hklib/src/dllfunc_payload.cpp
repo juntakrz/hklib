@@ -1,65 +1,72 @@
 #include "pch.h"
 #include "dllfunc.h"
 
-LPVOID getIATEntry(std::string libName, std::string funcName) noexcept {
-  if (libName == "" || funcName == "") {
+LPVOID getIATEntry(std::string libraryName, std::string functionName) noexcept {
+  if (libraryName == "" || functionName == "") {
     return nullptr;
   }
 
-  dataLocal.pDOSHdr = (PIMAGE_DOS_HEADER)dataLocal.pBaseAddr;
+  dataLocal.pDOSHeader = (PIMAGE_DOS_HEADER)dataLocal.pBaseAddress;
 
-  if (dataLocal.pDOSHdr->e_magic == IMAGE_DOS_SIGNATURE) {
-    dataLocal.pNTHdr = PIMAGE_NT_HEADERS((PBYTE)dataLocal.pDOSHdr +
-                                         dataLocal.pDOSHdr->e_lfanew);
+  if (dataLocal.pDOSHeader->e_magic != IMAGE_DOS_SIGNATURE) {
+    return nullptr;
+  }
 
-    if (dataLocal.pNTHdr->Signature == IMAGE_NT_SIGNATURE) {
-      dataLocal.pOptHdr = &dataLocal.pNTHdr->OptionalHeader;
+  dataLocal.pNTHeader = PIMAGE_NT_HEADERS((PBYTE)dataLocal.pDOSHeader + dataLocal.pDOSHeader->e_lfanew);
 
-      PIMAGE_DATA_DIRECTORY pDataDir =
-          &dataLocal.pOptHdr->DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT];
+  if (dataLocal.pNTHeader->Signature != IMAGE_NT_SIGNATURE) {
+    return nullptr;
+  }
 
-      if (pDataDir->Size > 0) {
-        PIMAGE_IMPORT_DESCRIPTOR pBaseImportDesc = PIMAGE_IMPORT_DESCRIPTOR(
-            (PBYTE)dataLocal.pBaseAddr + pDataDir->VirtualAddress);
+  dataLocal.pOptionalHeader = &dataLocal.pNTHeader->OptionalHeader;
 
-        PIMAGE_IMPORT_DESCRIPTOR pItImportDesc = pBaseImportDesc;
-        LPSTR pLibName;
+  PIMAGE_DATA_DIRECTORY pDataDirectory = &dataLocal.pOptionalHeader->DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT];
 
-        while (pItImportDesc->Characteristics != NULL) {
-          if ((pLibName = (PCHAR)dataLocal.pDOSHdr + pItImportDesc->Name) ==
-              libName) {
-            PIMAGE_THUNK_DATA pThunkILT = nullptr;
-            PIMAGE_THUNK_DATA pThunkIAT = nullptr;
-            std::string strQuery = "";
+  if (pDataDirectory->Size == 0) {
+    return nullptr;
+  }
 
-            pThunkILT = PIMAGE_THUNK_DATA((PBYTE)dataLocal.pDOSHdr +
-                                          pItImportDesc->OriginalFirstThunk);
-            pThunkIAT = PIMAGE_THUNK_DATA((PBYTE)dataLocal.pDOSHdr +
-                                          pItImportDesc->FirstThunk);
+  PIMAGE_IMPORT_DESCRIPTOR pBaseImportDesc = PIMAGE_IMPORT_DESCRIPTOR(
+      (PBYTE)dataLocal.pBaseAddress + pDataDirectory->VirtualAddress);
 
-            while (pThunkILT->u1.AddressOfData != 0) {
-              if (!(pThunkILT->u1.Ordinal & IMAGE_ORDINAL_FLAG)) {
-                strQuery = PIMAGE_IMPORT_BY_NAME((PBYTE)dataLocal.pDOSHdr +
-                                                 pThunkILT->u1.AddressOfData)
-                               ->Name;
-                if (strQuery == funcName) {
-                  return pThunkIAT;
-                }
+  PIMAGE_IMPORT_DESCRIPTOR pItImportDesc = pBaseImportDesc;
+  LPSTR pLibName;
 
-              } else if (IMAGE_ORDINAL(pThunkILT->u1.Ordinal)) {
-                strQuery = std::to_string(pThunkILT->u1.Function & 0xffff);
-                if (strQuery == funcName) {
-                  return pThunkIAT;
-                }
-              }
-              pThunkILT++;
-              pThunkIAT++;
-            }
+  while (pItImportDesc->Characteristics != NULL) {
+
+    if ((pLibName = (PCHAR)dataLocal.pDOSHeader + pItImportDesc->Name) == libraryName) {
+      PIMAGE_THUNK_DATA pThunkILT = nullptr;
+      PIMAGE_THUNK_DATA pThunkIAT = nullptr;
+      std::string strQuery = "";
+
+      pThunkILT = PIMAGE_THUNK_DATA((PBYTE)dataLocal.pDOSHeader +
+                                    pItImportDesc->OriginalFirstThunk);
+      pThunkIAT = PIMAGE_THUNK_DATA((PBYTE)dataLocal.pDOSHeader +
+                                    pItImportDesc->FirstThunk);
+
+      while (pThunkILT->u1.AddressOfData != 0) {
+
+        if (!(pThunkILT->u1.Ordinal & IMAGE_ORDINAL_FLAG)) {
+
+          strQuery = PIMAGE_IMPORT_BY_NAME((PBYTE)dataLocal.pDOSHeader + pThunkILT->u1.AddressOfData)->Name;
+
+          if (strQuery == functionName) {
+            return pThunkIAT;
           }
-          pItImportDesc++;
+
+        } else if (IMAGE_ORDINAL(pThunkILT->u1.Ordinal)) {
+          strQuery = std::to_string(pThunkILT->u1.Function & 0xffff);
+
+          if (strQuery == functionName) {
+            return pThunkIAT;
+          }
         }
+        pThunkILT++;
+        pThunkIAT++;
       }
     }
+
+    pItImportDesc++;
   }
 
   return nullptr;

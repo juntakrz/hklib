@@ -3,7 +3,7 @@
 namespace hk_pe {
 struct {
   PIMAGE_DOS_HEADER pDOSHdr = nullptr;								        // base address of PE image
-  PIMAGE_NT_HEADERS pNTHdr = nullptr;
+  PIMAGE_NT_HEADERS pNTHeader = nullptr;
   PIMAGE_SECTION_HEADER pSecHdr = nullptr;                                  // first section header
   PIMAGE_EXPORT_DIRECTORY pExportDir = nullptr;
   PIMAGE_DATA_DIRECTORY pImportDir = nullptr;

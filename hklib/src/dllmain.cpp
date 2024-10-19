@@ -2,17 +2,13 @@
 #include "define.h"
 #include "dllfunc.h"
 
-_DATA_IMPORT dataImport;
-_DATA_LOCAL  dataLocal;
+DATA_IMPORT dataImport;
+DATA_LOCAL  dataLocal;
 
 void init(HINSTANCE hInst) noexcept {
   // get base address of the host
-  dataLocal.pBaseAddr = (PBYTE)GetModuleHandleA(NULL);
-
-  
-  LPVOID pFunc0 =
-    getIATEntry("GDI32.dll", "GetPixel");
-
+  dataLocal.pBaseAddress = (PBYTE)GetModuleHandleA(NULL);
+  LPVOID pFunc0 = getIATEntry("GDI32.dll", "GetPixel");
   replaceIATEntry(pFunc0, hijack);
 }
 
