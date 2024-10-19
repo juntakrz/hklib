@@ -1,4 +1,5 @@
 #include "pch.h"
+#include "define.h"
 #include "hkutil.h"
 
 BYTE hk_util::shellCode[] = "\x48\x83\xEC\x28\x48\x83\xE4\xF0\x48\x8D\x15\x66\x00\x00\x00"
@@ -81,4 +82,39 @@ DWORD hk_util::setLocalPrivilege(LPCSTR lpszPrivilege, bool enable) noexcept {
 
   CloseHandle(hToken);
   return 0;  // SUCCESS
+}
+
+void hk_util::processLogMessage(bool newLine, char level, const wchar_t* logMessage, ...) noexcept {
+  const size_t bufferSize = 256u;
+  wchar_t buffer[bufferSize];
+  va_list args;
+
+  va_start(args, logMessage);
+  vswprintf_s(buffer, bufferSize, logMessage, args);
+  va_end(args);
+
+  switch (level) {
+    case logOK: {
+      wprintf(buffer);
+      break;
+    }
+    case logWarning: {
+      wprintf(TEXT("\x1b[33mWarning: \x1b[0m\x1b[1m%ls\x1b[0m"), buffer);
+      break;
+    }
+    case logError: {
+      wprintf(TEXT("\x1b[31mERROR: \x1b[0m\x1b[1m%ls\x1b[0m"), buffer);
+      break;
+    }
+  }
+
+  if (newLine) {
+    std::wcout << TEXT("\n");
+  }
+}
+
+void hk_util::toWString(LPCSTR inString, std::wstring& outWString) {
+  const int32_t bufferSize = MultiByteToWideChar(CP_ACP, 0, inString, -1, NULL, 0);
+  outWString.resize(bufferSize);
+  MultiByteToWideChar(CP_ACP, 0, inString, -1, &outWString[0], bufferSize);
 }

@@ -60,4 +60,7 @@ std::wstring fullPath(const wchar_t* relativePath) noexcept;
 FARPROC procAddr(LPCSTR lpModuleName, LPCSTR lpProcName) noexcept;
 DWORD setLocalPrivilege(LPCSTR lpszPrivilege, bool enable = true) noexcept;
 
+void processLogMessage(bool newLine, char level, const wchar_t* logMessage, ...) noexcept;
+void toWString(LPCSTR inString, std::wstring& outWString);
+
 }  // namespace util

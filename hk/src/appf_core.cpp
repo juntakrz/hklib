@@ -3,25 +3,25 @@
 #include "dataStruct.h"
 
 void printHelp() noexcept {
-  LOG("USAGE:  hk [process name / id] [-arguments]\n");
-  LOG("Arguments:");
-  LOG("  -a\t\tanalyze the process and output the data");
-  LOG("  -h\t\thollow out the process and inject the test code");
-  LOG("\nEXAMPLE: hk notepad.exe\tinject into notepad.exe");
-  LOG("\t hk 1377 -a\t\tinject into process with PID 1377 and retrieve its data");
-  LOG("\nPress ANY key to exit.");
+  printf("USAGE:  hk [process name / id] [-arguments]\n\n");
+  printf("Arguments:\n");
+  printf("  -a\t\tanalyze the process and output the data\n");
+  printf("  -h\t\thollow out the process and inject the shell code\n");
+  printf("\nEXAMPLE: hk notepad.exe\tinject into notepad.exe\n");
+  printf("\t hk 1377 -a\t\tinject into process with PID 1377 and retrieve its data\n");
+  printf("\nPress ANY key to exit.\n");
   _getch();
 
   exit(0);
 }
 
 int parseArgs(int argc, wchar_t* argv[]) {
-  
+
   if (argc < 2) {
     printHelp();
   }
 
-  global.dllName = L"hklib.dll";
+  global.dllName = TEXT("hklib.dll");
 
   DWORD PID;
   const std::wregex rNumbers(L"0-9");
@@ -29,40 +29,41 @@ int parseArgs(int argc, wchar_t* argv[]) {
 
   if (!std::regex_match(processArg.begin(), processArg.end(), rNumbers)) {
     PID = getProcessID(processArg.c_str());
-  } else {
+  }
+  else {
     PID = wcstol(processArg.c_str(), nullptr, 10);
   }
 
   wchar_t** pCurrentArg = argv + 2;
   wchar_t arg = 0;
-  while(*pCurrentArg) {
+  while (*pCurrentArg) {
     // arguments are in '-X' format, so skip '-'
     arg = *(*pCurrentArg + 1);
     switch (arg) {
-      case 'a': {
-        hk_dll::inject(PID);
-        analyzeTarget();
-        presentResults();
-        break;
-      }
-      case 'h': {
-        hk_local::hollowTarget(PID);
-        break;
-      }
-      case 't': {
-        testShellCode();
-        break;
-      }
-      default: {
-        hk_dll::inject(PID);
-        break;
-      }
+    case 'a': {
+      hk_dll::inject(PID);
+      analyzeTarget();
+      presentAnalysisResults();
+      break;
+    }
+    case 'h': {
+      hk_local::hollowTarget(PID);
+      break;
+    }
+    case 't': {
+      testShellCode();
+      break;
+    }
+    default: {
+      hk_dll::inject(PID);
+      break;
+    }
     }
 
     pCurrentArg++;
   }
 
-  LOG("\nPress ANY key to exit.");
+  LOG(logOK, "\nPress ANY key to exit.");
   _getch();
   hk_dll::eject();      // safe - ignored if DLL wasn't injected
   return 0;
@@ -79,14 +80,14 @@ void analyzeTarget() noexcept {
 
   HANDLE hExportThread = NULL;
   DWORD dwDataSize =
-      hk_dll::call("exportPEImageData", hExportThread, NULL_ID, CALL_NO_CLOSE);
+    hk_dll::call("exportPEImageData", hExportThread, NULL_ID, CALL_NO_CLOSE);
 
-  LOG("Receiving " << dwDataSize << " bytes of data gathered inside the host.");
+  LOG(logOK, "Receiving %d bytes of data gathered inside the host.", dwDataSize);
 
   HANDLE hSharedMem = OpenFileMappingA(FILE_MAP_ALL_ACCESS, false, "%HKDATA%");
   if (hSharedMem) {
     LPVOID lpView =
-        MapViewOfFile(hSharedMem, FILE_MAP_ALL_ACCESS, 0, 0, dwDataSize);
+      MapViewOfFile(hSharedMem, FILE_MAP_ALL_ACCESS, 0, 0, dwDataSize);
 
     std::vector<std::string> modules;
     std::map<std::string, std::vector<std::string>> functions;
@@ -95,14 +96,14 @@ void analyzeTarget() noexcept {
 
     for (DWORD m = 0; m < dwDataSize;) {
       modules.emplace_back((char*)pCurrent + m);
-      m += modules.back().size() + 1;
+      m += (DWORD)modules.back().size() + 1;
 
       // 0x1F = delimiter
       if (*(pCurrent + m) == (BYTE)0x1F) {
         m++;
         while (*(pCurrent + m) != (BYTE)0x1F) {
           functions[modules.back()].emplace_back((char*)pCurrent + m);
-          m += functions.at(modules.back()).back().size() + 1;
+          m += (DWORD)functions.at(modules.back()).back().size() + 1;
         };
         m++;
       }
@@ -117,13 +118,14 @@ void analyzeTarget() noexcept {
 
     hk_dll::call("freeSharedMemory", NULL_THREAD, NULL_ID, 0);
   }
+
   CloseHandle(hExportThread);
 }
 
 void testShellCode() noexcept {
-    
-  LOG("Testing provided shellcode (hex):");
-  
+
+  LOG(logOK, "Testing provided shellcode (hex):");
+
   // return x + y * x + y / 100
   /*BYTE shellCode[] = {0x44, 0x8D, 0x42, 0x01, 0xB8, 0x1F, 0x85, 0xEB,
                        0x51, 0xF7,
@@ -138,8 +140,8 @@ void testShellCode() noexcept {
 
   int x = 5, y = 1000;
   void* exec =
-      VirtualAlloc(0, hk_util::shellCodeSize, MEM_COMMIT,
-                            PAGE_EXECUTE_READWRITE);
+    VirtualAlloc(0, hk_util::shellCodeSize, MEM_COMMIT,
+      PAGE_EXECUTE_READWRITE);
   memcpy(exec, hk_util::shellCode, hk_util::shellCodeSize);
   /*int result =
       ((int (*)(int, int))exec)(x, y);  // that C/C++ function casting, oh boy
@@ -152,12 +154,12 @@ void testShellCode() noexcept {
   ((shCodeExec)exec)();
 }
 
-void presentResults() noexcept {
+void presentAnalysisResults() noexcept {
   HMODULE hLib = nullptr;
   std::string loadedLibName = "";
 
   // library index, winapi functions num, total functions num, winapi libraries num
-  size_t index = 0, wCount = 0, totalCount = 0, wLibCount = 0;
+  size_t index = 0, winAPIMethodCount = 0, totalMethodCount = 0, winAPILibraryCount = 0;
   bool query = false, findResult = false;
 
   // WinAPI function detection, returns true if GetProcAddress isn't null
@@ -170,50 +172,52 @@ void presentResults() noexcept {
       hLib = LoadLibraryA(libName.c_str());
 
       if (hLib) {
-        wLibCount++;
+        winAPILibraryCount++;
         loadedLibName = libName;
       }
     }
 
     if (hLib && GetProcAddress(hLib, funcName.c_str())) {
-      wCount++;
+      winAPIMethodCount++;
       return true;
     }
 
     return false;
-  };
+    };
 
   if (!dataImport.modules.empty()) {
-    LOG("\nLibraries in the import table:\n");
+    LOG(logOK, "\nLibraries in the import table:\n");
 
     // show every imported library found
-    for (const auto& it_module : dataImport.modules) {
-      LOG(index << ".\t" << it_module);
-      LOG("\t   \\");
+    for (const std::string& itModuleName : dataImport.modules) {
+      printf("%llu.\t%s\n", index, itModuleName.c_str());
+      printf("\t   \\\n");
 
       findResult =
-          (dataImport.functions.find(it_module) != dataImport.functions.end());
+        (dataImport.functions.find(itModuleName) != dataImport.functions.end());
 
       if (!dataImport.functions.empty() && findResult) {
-        for (const auto it_func : dataImport.functions.at(it_module)) {
-          query = isWinAPI(it_module, it_func);
-          query ? LOG("\t*  |= " << it_func) : LOG("\t   |= " << it_func);
+        for (const std::string& itFunctionName : dataImport.functions.at(itModuleName)) {
+          query = isWinAPI(itModuleName, itFunctionName);
+          query ? printf("\t*  |= %s\n", itFunctionName.c_str()) : printf("\t   |= %s\n", itFunctionName.c_str());
         }
       }
+        
+      if (findResult)
+      {
+        totalMethodCount += dataImport.functions.at(itModuleName).size();
+      }
 
-      totalCount += (findResult) ? dataImport.functions.at(it_module).size() : 0u;
       index++;
     }
 
-    LOG("\n* - WinAPI method.");
+    LOG(logOK, "\n* - WinAPI method.");
   }
-  LOG("\nREPORT:\n");
+  LOG(logOK, "\nREPORT:\n");
 
   if (!dataImport.modules.empty()) {
-    LOG("WinAPI libraries detected: " << wLibCount << " out of "
-                                      << dataImport.modules.size() << ".");
-    LOG("WinAPI methods detected: " << wCount << " out of " << totalCount
-                                    << ".\n");
+    LOG(logOK, "WinAPI libraries detected: %d out of %d.", winAPILibraryCount, dataImport.modules.size());
+    LOG(logOK, "WinAPI methods detected: %d out of %d.\n", winAPIMethodCount, totalMethodCount);
   }
   /*
   wLOG("Entropy for '" << execBuffer->getSource()->getFilePath()

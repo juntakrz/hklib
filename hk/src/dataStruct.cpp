@@ -43,7 +43,7 @@ DWORD dtGlobal::offsetOf(LPCSTR function) noexcept {
     return remoteFunctions.at(function);
   }
 
-  LOG("ERROR: function '" << function << "' not found in the database.");
+  LOG(logError, "function '%s' was not found in the database.", function);
 
   return -1;
 }

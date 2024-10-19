@@ -6,8 +6,7 @@
 
 void hk_dll::inject(DWORD PID) noexcept {
   if (!PID) {
-    LOG("ERROR: invalid process ID. Either the process is not running or "
-        "couldn't be detected.");
+    LOG(logError, "Invalid process ID. Either the process is not running or couldn't be detected.");
     return;
   }
 
@@ -19,12 +18,12 @@ void hk_dll::inject(DWORD PID) noexcept {
   // stored PID
   (PID) ? global.PID = PID : PID = global.PID;
 
-  global.dllRelativePath = "hklib.dll";
+  global.dllRelativePath = TEXT("hklib.dll");
   global.dllFullPath = hk_util::fullPath(global.dllRelativePath.c_str());
   std::string moduleName = "Kernel32.dll";
   std::string funcName = "LoadLibraryA";
 
-  LOG("Injecting DLL into PID " << global.PID << ".");
+  LOG(logOK, "Injecting DLL into PID %d.", global.PID);
 
   // get LoadLibraryA
   HMODULE hKernel = GetModuleHandleA(moduleName.c_str());
@@ -45,8 +44,7 @@ void hk_dll::inject(DWORD PID) noexcept {
   global.hTInject = CreateRemoteThread(global.hProc, NULL, NULL, LLAddr,
                                        global.pAllocatedArg, NULL, &global.TID);
 
-  LOG("'" << global.dllRelativePath << "' injected from '" << global.dllFullPath
-          << "'.");
+  LOG(logOK, "'%ls' injected from '%ls'.", global.dllRelativePath.c_str(), global.dllFullPath.c_str());
 
   WaitForSingleObject(global.hTInject, INFINITE);
 
@@ -54,7 +52,7 @@ void hk_dll::inject(DWORD PID) noexcept {
   global.addFunction("ejectDLL");
   global.updateOffsets();
 
-  LOG("Injected DLL is ready to accept calls.");
+  LOG(logOK, "Injected DLL is ready to accept calls.");
 }
 
 void hk_dll::eject() noexcept {
@@ -78,7 +76,10 @@ DWORD hk_dll::call(LPCSTR function, HANDLE& out_hThread, DWORD& out_idThread,
   DWORD idThread = 0, threadResult = 0;
   LPVOID lpArgAddr = nullptr;
 
-  LOG("Calling function '" << function << "'.");
+  std::wstring wideFunctionName;
+  hk_util::toWString(function, wideFunctionName);
+
+  LOG(logOK, "Calling function '%ls'.", wideFunctionName.c_str());
 
   lpTSR =
       LPTHREAD_START_ROUTINE(global.dllBaseAddr + global.offsetOf(function));
@@ -151,21 +152,21 @@ uint64_t hk_dll::getBaseAddr() noexcept {
 
 DWORD hk_dll::getExportOffset(LPCSTR funcName) noexcept {
   if (!global.hLocalDLL) {
-    global.hLocalDLL = LoadLibraryA(global.dllFullPath.c_str());
+    global.hLocalDLL = LoadLibrary(global.dllFullPath.c_str());
 
     if (!global.hLocalDLL) {
-      LOG("ERROR: failed to load '" << global.dllFullPath << "'.\n");
+      LOG(logError, "Failed to load '%s'.\n", global.dllFullPath);
       ERRCHK;
     }
   }
 
   LPVOID funcAddr = GetProcAddress(global.hLocalDLL, funcName);
   if (!funcAddr) {
-    LOG("ERROR: failed to locate function '" << funcName << "'.\n");
+    LOG(logError, "failed to locate function '%s'.\n", funcName);
     ERRCHK;
   }
 
-  DWORD offset = (PBYTE)funcAddr - (PBYTE)global.hLocalDLL;
+  DWORD offset = DWORD((PBYTE)funcAddr - (PBYTE)global.hLocalDLL);
 
   return offset;
 }

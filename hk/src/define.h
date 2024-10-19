@@ -2,10 +2,14 @@
 
 #include "pch.h"
 
-#define LOG(x)		std::cout << x << "\n"
-#define wLOG(x)		std::wcout << x << "\n"
-#define LOGn(x)		std::cout << x
-#define wLOGn(x)	std::wcout << x
+#define LOG(l, x, ...) hk_util::processLogMessage(true, l, TEXT(x), __VA_ARGS__)
+#define LOGn(l, x, ...) hk_util::processLogMessage(false, l, TEXT(x), __VA_ARGS__)
+#define ASSERT(x) \
+  if (!(x)) __debugbreak();
+
+constexpr char logOK = 0;
+constexpr char logWarning = 1;
+constexpr char logError = 2;
 
 #define ERRCHK                  \
   { DWORD error = GetLastError();	\

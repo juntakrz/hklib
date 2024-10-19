@@ -12,11 +12,11 @@ struct dtGlobal {
 
   HMODULE hLocalDLL = nullptr;
 
-  std::wstring dllName = L"hklib.dll";
+  std::wstring dllName = TEXT("hklib.dll");
   uint64_t dllBaseAddr = 0;
   std::map<std::string, DWORD> remoteFunctions;
-  std::string dllRelativePath = "hklib.dll";
-  std::string dllFullPath = "";
+  std::wstring dllRelativePath = TEXT("hklib.dll");
+  std::wstring dllFullPath = std::wstring();
 
   BOOL addFunction(LPCSTR function) noexcept;					// must call updateOffsets() when done adding functions
   BOOL removeFunction(LPCSTR function) noexcept;

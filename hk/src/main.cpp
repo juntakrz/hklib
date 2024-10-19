@@ -4,7 +4,7 @@
 
 int wmain(int argc, wchar_t *argv[]) { 
 
-  LOG("<HK> LOG\n");
+  LOG(logOK, "<HK> LOG\n");
 
   if (argc > 1) {
     return parseArgs(argc, argv);

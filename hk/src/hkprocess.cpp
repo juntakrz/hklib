@@ -7,23 +7,22 @@ hkProcess::hkProcess(const char* procPath) : m_procPath(procPath) {
   DWORD errorCode = 0;      // 0 = no error
 
   if (!procPath) {
-    LOG("ERROR: Path to process '" << m_procPath << "' is incorrect.\nPress ANY key to exit");
+    LOG(logError, "Path to process '%s' is invalid.\nPress ANY key to exit.", m_procPath);
     _getch();
     exit(404);
   }
 
-  LOG("Creating target process using '" << m_procPath << "'.");
+  LOG(logOK, "Creating target process using '%s'.", m_procPath);
 
   if (errorCode = init()) {
-    LOG("ERROR: Failed creating target class object. Error code: " << errorCode
-                                                                   << ".");
-    LOG("Terminating opened process and exiting.\nPress ANY key to exit.");
+    LOG(logError, "Failed to create target class object. Error code: %d.", errorCode);
+    LOG(logOK, "Terminating opened process and exiting.\nPress ANY key to exit.");
     _getch();
     TerminateProcess(hProcess, errorCode);
     exit(errorCode);
   };
 
-  LOG("SUCCESS: Target process (PID " << dwProcessId << ") created and is ready for action.\n");
+  LOG(logOK, "SUCCESS: Target process (PID %d) created and is ready for action.\n", dwProcessId);
 }
 
 NTSTATUS hkProcess::resetContext() noexcept { return hkSetContextThread(hThread, &m_ctx); }
@@ -46,7 +45,7 @@ DWORD hkProcess::init() noexcept {
   if (!CreateProcessA(m_procPath.c_str(), NULL, NULL, NULL, TRUE,
                       CREATE_SUSPENDED | CREATE_NO_WINDOW, NULL, NULL,
                       &startupInfo, &procInfo)) {
-    LOG("ERROR: Failed to create process '" << m_procPath << "'.");
+    LOG(logError, "Failed to create process '%s'.", m_procPath);
     return GetLastError();
   }
 
@@ -57,13 +56,12 @@ DWORD hkProcess::init() noexcept {
                   GetCurrentProcess(), TRUE, NULL, NULL, NULL);*/
 
   if (hkGetContextThread(hThread, &m_ctx)) {
-    LOG("ERROR: Failed to get target thread context.");
+    LOG(logError, "Failed to get target thread context.");
     return GetLastError();
   };
 
   if (!OpenProcess(PROCESS_ALL_ACCESS, FALSE, dwProcessId)) {
-    LOG("ERROR: Failed to open process with ID: "
-        << dwProcessId << ". Error code: " << GetLastError());
+    LOG(logError, "Failed to open process with ID: %d, error code: %d.", dwProcessId, GetLastError());
     TerminateProcess(hProcess, 0);
     return false;
   }
@@ -75,7 +73,7 @@ DWORD hkProcess::init() noexcept {
   // read PEB from target process memory and store data in a temporary PEB structure
   if (!ReadProcessMemory(hProcess, procBasicInfo.PebBaseAddress,
                          &hkPEB64, sizeof(hkPEB64), nullptr)) {
-    LOG("ERROR: Failed to read process environment block.");
+    LOG(logError, "Failed to read process environment block.");
     TerminateProcess(hProcess, 0);
     return GetLastError();
   }
@@ -85,8 +83,7 @@ DWORD hkProcess::init() noexcept {
   if (!ReadProcessMemory(hProcess, hkPEB64.ImageBaseAddress, pData.get(),
                          bufSize, &bytesRead) ||
       bytesRead != bufSize) {
-    LOG("ERROR: Failed to read target image header from address 0x"
-        << std::hex << hkPEB64.ImageBaseAddress << " in PEB.");
+    LOG(logError, "Failed to read target image header at address 0x%x in PEB.", hkPEB64.ImageBaseAddress);
     TerminateProcess(hProcess, 0);
     return GetLastError();
   }
@@ -94,7 +91,7 @@ DWORD hkProcess::init() noexcept {
   WORD e_magic = *(PWORD)pData.get();
 
   if (*(PWORD)pData.get() != IMAGE_DOS_SIGNATURE) {
-    LOG("ERROR: Incorrect image DOS header. Valid signature not found.");
+    LOG(logError, "Incorrect image DOS header.Valid signature not found.");
     TerminateProcess(hProcess, 0);
     return IMAGE_DOS_SIGNATURE;
   }
@@ -104,7 +101,7 @@ DWORD hkProcess::init() noexcept {
       PIMAGE_NT_HEADERS64((PBYTE)pHdrDOS + pHdrDOS->e_lfanew);
 
   if (pHdrNT->Signature != IMAGE_NT_SIGNATURE) {
-    LOG("ERROR: Incorrect image NT header. Valid signature not found.");
+    LOG(logError, "Incorrect image NT header.Valid signature not found.");
     TerminateProcess(hProcess, 0);
     return IMAGE_NT_SIGNATURE;
   }
@@ -119,7 +116,7 @@ DWORD hkProcess::init() noexcept {
   if (!ReadProcessMemory(hProcess, hkPEB64.ImageBaseAddress, pData.get(),
                          imageSize, &bytesRead) ||
       bytesRead != imageSize) {
-    LOG("ERROR: Failed to read and store whole image.");
+    LOG(logError, "Failed to read and store whole image.");
     TerminateProcess(hProcess, 0);
     return GetLastError();
   }
