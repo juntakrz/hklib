@@ -36,31 +36,36 @@ int parseArgs(int argc, wchar_t* argv[]) {
 
   wchar_t** pCurrentArg = argv + 2;
   wchar_t arg = 0;
+  bool wasExecuted = false;
+
   while (*pCurrentArg) {
     // arguments are in '-X' format, so skip '-'
     arg = *(*pCurrentArg + 1);
     switch (arg) {
-    case 'a': {
-      hk_dll::inject(PID);
-      analyzeTarget();
-      presentAnalysisResults();
-      break;
-    }
-    case 'h': {
-      hk_local::hollowTarget(PID);
-      break;
-    }
-    case 't': {
-      testShellCode();
-      break;
-    }
-    default: {
-      hk_dll::inject(PID);
-      break;
-    }
+      case 'a': {
+        hk_dll::inject(PID);
+        analyzeTarget();
+        presentAnalysisResults();
+        wasExecuted = true;
+        break;
+      }
+      case 'h': {
+        hk_local::hollowTarget(PID);
+        wasExecuted = true;
+        break;
+      }
+      case 't': {
+        testShellCode();
+        wasExecuted = true;
+        break;
+      }
     }
 
     pCurrentArg++;
+  }
+
+  if (!wasExecuted) {
+    hk_dll::inject(PID);
   }
 
   LOG(logOK, "\nPress ANY key to exit.");
@@ -141,9 +146,7 @@ void testShellCode() noexcept {
   std::cout << std::dec << "\n\n";
 
   int x = 5, y = 1000;
-  void* exec =
-    VirtualAlloc(0, hk_util::shellCodeSize, MEM_COMMIT,
-      PAGE_EXECUTE_READWRITE);
+  void* exec = VirtualAlloc(0, hk_util::shellCodeSize, MEM_COMMIT, PAGE_EXECUTE_READWRITE);
   memcpy(exec, hk_util::shellCode, hk_util::shellCodeSize);
   /*int result =
       ((int (*)(int, int))exec)(x, y);  // that C/C++ function casting, oh boy

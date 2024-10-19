@@ -26,9 +26,7 @@ LPVOID getIATEntry(std::string libraryName, std::string functionName) noexcept {
     return nullptr;
   }
 
-  PIMAGE_IMPORT_DESCRIPTOR pBaseImportDesc = PIMAGE_IMPORT_DESCRIPTOR(
-      (PBYTE)dataLocal.pBaseAddress + pDataDirectory->VirtualAddress);
-
+  PIMAGE_IMPORT_DESCRIPTOR pBaseImportDesc = PIMAGE_IMPORT_DESCRIPTOR((PBYTE)dataLocal.pBaseAddress + pDataDirectory->VirtualAddress);
   PIMAGE_IMPORT_DESCRIPTOR pItImportDesc = pBaseImportDesc;
   LPSTR pLibName;
 
@@ -39,10 +37,8 @@ LPVOID getIATEntry(std::string libraryName, std::string functionName) noexcept {
       PIMAGE_THUNK_DATA pThunkIAT = nullptr;
       std::string strQuery = "";
 
-      pThunkILT = PIMAGE_THUNK_DATA((PBYTE)dataLocal.pDOSHeader +
-                                    pItImportDesc->OriginalFirstThunk);
-      pThunkIAT = PIMAGE_THUNK_DATA((PBYTE)dataLocal.pDOSHeader +
-                                    pItImportDesc->FirstThunk);
+      pThunkILT = PIMAGE_THUNK_DATA((PBYTE)dataLocal.pDOSHeader + pItImportDesc->OriginalFirstThunk);
+      pThunkIAT = PIMAGE_THUNK_DATA((PBYTE)dataLocal.pDOSHeader + pItImportDesc->FirstThunk);
 
       while (pThunkILT->u1.AddressOfData != 0) {
 
@@ -61,6 +57,7 @@ LPVOID getIATEntry(std::string libraryName, std::string functionName) noexcept {
             return pThunkIAT;
           }
         }
+
         pThunkILT++;
         pThunkIAT++;
       }
@@ -72,16 +69,18 @@ LPVOID getIATEntry(std::string libraryName, std::string functionName) noexcept {
   return nullptr;
 }
 
-void replaceIATEntry(LPVOID source, LPVOID target) noexcept {
-  if (source) {
-    DWORD newProtect = 0;
-    DWORD oldProtect = 0;
-    uint64_t* pSource = (uint64_t*)source;
-    uint64_t pTarget = (uint64_t)target;
-    VirtualProtect(source, sizeof(LPVOID), PAGE_READWRITE, &oldProtect);
-    *pSource = pTarget;
-    VirtualProtect(source, sizeof(LPVOID), oldProtect, &newProtect);
+void replaceIATEntry(LPVOID lpSource, LPVOID lpTarget) noexcept {
+  if (!lpSource) {
+    return;
   }
+
+  DWORD newProtect = 0;
+  DWORD oldProtect = 0;
+  uint64_t* pSource = (uint64_t*)lpSource;
+  uint64_t pTarget = (uint64_t)lpTarget;
+  VirtualProtect(lpSource, sizeof(LPVOID), PAGE_READWRITE, &oldProtect);
+  *pSource = pTarget;
+  VirtualProtect(lpSource, sizeof(LPVOID), oldProtect, &newProtect);
 }
 
 void hijack() noexcept {

@@ -37,6 +37,8 @@ void hk_dll::inject(DWORD PID) noexcept {
     }
   );
 
+  LOG(logOK, "Injecting '%ls' from '%ls'.", global.dllRelativePath.c_str(), global.dllFullPath.c_str());
+
   global.hProcess = OpenProcess(PROCESS_ALL_ACCESS, FALSE, PID);
   global.pAllocatedAddress = VirtualAllocEx(global.hProcess, NULL, dllFullPathA.size(), MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
   WriteProcessMemory(global.hProcess, global.pAllocatedAddress, (LPCVOID)dllFullPathA.c_str(), dllFullPathA.size(), &bytesWritten);
@@ -44,8 +46,6 @@ void hk_dll::inject(DWORD PID) noexcept {
   ERRCHK;
 
   global.hTInject = CreateRemoteThread(global.hProcess, NULL, NULL, LLAddr,global.pAllocatedAddress, NULL, &global.TID);
-
-  LOG(logOK, "Injecting '%ls' from '%ls'.", global.dllRelativePath.c_str(), global.dllFullPath.c_str());
 
   WaitForSingleObject(global.hTInject, INFINITE);
 
@@ -131,8 +131,8 @@ DWORD hk_dll::call(LPCSTR function, HANDLE& outHThread, DWORD& outIdThread, DWOR
 }
 
 uint64_t hk_dll::getBaseAddr() noexcept {
-  MODULEENTRY32W me{};
-  me.dwSize = sizeof(MODULEENTRY32W);
+  MODULEENTRY32W moduleEntry{};
+  moduleEntry.dwSize = sizeof(MODULEENTRY32W);
 
   HANDLE hSnapshot = CreateToolhelp32Snapshot(
       TH32CS_SNAPMODULE | TH32CS_SNAPMODULE32, global.PID);
@@ -143,15 +143,15 @@ uint64_t hk_dll::getBaseAddr() noexcept {
   }
 
   do {
-    if (me.szModule == global.dllName) {
+    if (moduleEntry.szModule == global.dllName) {
 
       if (!CloseHandle(hSnapshot)) {
         ERRCHK;
       };
 
-      return (uint64_t)me.modBaseAddr;
+      return (uint64_t)moduleEntry.modBaseAddr;
     }
-  } while (Module32NextW(hSnapshot, &me));
+  } while (Module32NextW(hSnapshot, &moduleEntry));
 
   LOG(logError, "Failed to retrieve base address for the HK dll.");
   return -1;

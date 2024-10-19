@@ -7,8 +7,7 @@
 
 bool hk_local::hollowTarget(DWORD PID) noexcept {
   if (!PID) {
-    LOG(logError, "Invalid process ID. Either the process is not running or "
-        "couldn't be detected.");
+    LOG(logError, "Invalid process ID. Either the process is not running or couldn't be detected.");
     return false;
   }
 

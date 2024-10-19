@@ -17,10 +17,10 @@ void parseImportDescriptor(PIMAGE_IMPORT_DESCRIPTOR pImportDesc, std::string lib
 //
 
 // Get IAT entry for a required module and function
-LPVOID getIATEntry(std::string libraryName, std::string funcName) noexcept;
+LPVOID getIATEntry(std::string libraryName, std::string functionName) noexcept;
 
 // Replace IAT entry with an address of another function
-void replaceIATEntry(LPVOID source, LPVOID target) noexcept;
+void replaceIATEntry(LPVOID lpSource, LPVOID lpTarget) noexcept;
 
 // Main payload function
 void hijack() noexcept;

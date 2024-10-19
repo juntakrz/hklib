@@ -10,8 +10,7 @@ void parseImportDescriptor(PIMAGE_IMPORT_DESCRIPTOR pImportDesc, std::string lib
     PIMAGE_THUNK_DATA pThunkIAT = nullptr;
     PIMAGE_IMPORT_BY_NAME pIBName = nullptr;
 
-    pThunkILT = PIMAGE_THUNK_DATA((PBYTE)dataLocal.pDOSHeader +
-                                           pImportDesc->OriginalFirstThunk);
+    pThunkILT = PIMAGE_THUNK_DATA((PBYTE)dataLocal.pDOSHeader + pImportDesc->OriginalFirstThunk);
     pThunkIAT = PIMAGE_THUNK_DATA((PBYTE)dataLocal.pDOSHeader + pImportDesc->FirstThunk);
 
     std::stringstream sstr;
@@ -22,8 +21,7 @@ void parseImportDescriptor(PIMAGE_IMPORT_DESCRIPTOR pImportDesc, std::string lib
       sstr.str(std::string());
 
       if (!(pThunkILT->u1.Ordinal & IMAGE_ORDINAL_FLAG)) {
-        pIBName =
-            PIMAGE_IMPORT_BY_NAME((PBYTE)dataLocal.pDOSHeader + pThunkILT->u1.AddressOfData);
+        pIBName = PIMAGE_IMPORT_BY_NAME((PBYTE)dataLocal.pDOSHeader + pThunkILT->u1.AddressOfData);
 
         sstr << pIBName->Name;// << " __ 0x" << std::uppercase << std::hex << uint64_t((PBYTE)pThunkIAT->u1.Function);
         collectedFuncs.emplace_back(sstr.str());
