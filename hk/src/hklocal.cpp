@@ -49,9 +49,9 @@ bool hk_local::hollowTarget(DWORD PID) noexcept {
   injectAtEntry(&targetProc, &pTgtSectionView);
 
   if(targetProc.resetContext()) {
-    LOG(logWarning, "Failed to properly restore context for the target process thread. Error Code: %d",
-        GetLastError());
-  };
+    LOG(logWarning, "Failed to properly restore context for the target process thread. Error Code: %d", GetLastError());
+  }
+
   ResumeThread(targetProc.hThread);
 
   // cleanup

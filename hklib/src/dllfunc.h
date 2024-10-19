@@ -28,6 +28,9 @@ void hijack() noexcept;
 // dllfunc_util.cpp
 void createConsole() noexcept;
 void outputPEDataToConsole() noexcept;
+std::string serializeAddressToString(PBYTE pAddress);
+std::string serializeOffsetToString(uint64_t offset);
+bool serializeAnalysisDataToMemory();
 
 //
 // dllfunc_export.cpp

@@ -22,12 +22,13 @@ void parseImportDescriptor(PIMAGE_IMPORT_DESCRIPTOR pImportDesc, std::string lib
 
       if (!(pThunkILT->u1.Ordinal & IMAGE_ORDINAL_FLAG)) {
         pIBName = PIMAGE_IMPORT_BY_NAME((PBYTE)dataLocal.pDOSHeader + pThunkILT->u1.AddressOfData);
-
-        sstr << pIBName->Name;// << " __ 0x" << std::uppercase << std::hex << uint64_t((PBYTE)pThunkIAT->u1.Function);
+        uint64_t functionOffsetFromBase = (uint64_t)pThunkIAT->u1.Function - (uint64_t)dataLocal.pBaseAddress;
+        sstr << pIBName->Name << "*" << serializeOffsetToString(functionOffsetFromBase);
         collectedFuncs.emplace_back(sstr.str());
-      } else if (IMAGE_ORDINAL(pThunkILT->u1.Ordinal)) {
+      }
+      else if (IMAGE_ORDINAL(pThunkILT->u1.Ordinal)) {
 
-        sstr << "<Ordinal> " << std::dec << (pThunkILT->u1.Function & 0xffff);// << " __ 0x" << std::uppercase << std::hex << uint64_t((PBYTE)pThunkIAT->u1.Function);
+        sstr << "<Ordinal> " << (pThunkILT->u1.Function & 0xffff);
         collectedFuncs.emplace_back(sstr.str());
       }
       pThunkILT++;

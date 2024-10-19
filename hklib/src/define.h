@@ -12,6 +12,8 @@ struct DATA_IMPORT {
   std::vector<std::string> modules;
   std::map<std::string, std::vector<std::string>> functions;
   DWORD dwDataSize = 0;
+  const char* szShareName = "%HKDATA%";
+  const BYTE delimiter = 0x1F;
 };
 
 struct DATA_LOCAL {
