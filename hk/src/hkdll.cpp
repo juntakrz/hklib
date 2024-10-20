@@ -27,8 +27,7 @@ void hk_dll::inject(DWORD PID) noexcept {
 
   // get LoadLibraryA
   HMODULE hKernel = GetModuleHandleA(moduleName.c_str());
-  LPTHREAD_START_ROUTINE LLAddr =
-      (LPTHREAD_START_ROUTINE)GetProcAddress(hKernel, funcName.c_str());
+  LPTHREAD_START_ROUTINE LLAddr = (LPTHREAD_START_ROUTINE)GetProcAddress(hKernel, funcName.c_str());
 
   // inject LoadLibraryA with dll path parameter
   std::string dllFullPathA;
@@ -134,8 +133,7 @@ uint64_t hk_dll::getBaseAddr() noexcept {
   MODULEENTRY32W moduleEntry{};
   moduleEntry.dwSize = sizeof(MODULEENTRY32W);
 
-  HANDLE hSnapshot = CreateToolhelp32Snapshot(
-      TH32CS_SNAPMODULE | TH32CS_SNAPMODULE32, global.PID);
+  HANDLE hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE | TH32CS_SNAPMODULE32, global.PID);
 
   if (hSnapshot == INVALID_HANDLE_VALUE) {
     LOG(logError, "Failed to retrieve base address for the HK dll.");

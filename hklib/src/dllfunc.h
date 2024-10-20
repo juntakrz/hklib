@@ -10,14 +10,14 @@
 void analyzePEImage() noexcept;
 
 // Parse PE import descriptor for a given module
-void parseImportDescriptor(PIMAGE_IMPORT_DESCRIPTOR pImportDesc, std::string libraryName) noexcept;
+void parseImportDescriptor(PIMAGE_IMPORT_DESCRIPTOR pImportDesc, const std::string& libraryName) noexcept;
 
 //
 // dllfunc_payload.cpp
 //
 
 // Get IAT entry for a required module and function
-LPVOID getIATEntry(std::string libraryName, std::string functionName) noexcept;
+LPVOID getIATEntry(const std::string& libraryName, const std::string& functionName) noexcept;
 
 // Replace IAT entry with an address of another function
 void replaceIATEntry(LPVOID lpSource, LPVOID lpTarget) noexcept;

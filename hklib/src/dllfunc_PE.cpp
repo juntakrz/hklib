@@ -1,44 +1,45 @@
 #include "pch.h"
 #include "dllfunc.h"
 
-void parseImportDescriptor(PIMAGE_IMPORT_DESCRIPTOR pImportDesc, std::string libraryName) noexcept {
-  if (pImportDesc && libraryName != "") {
+void parseImportDescriptor(PIMAGE_IMPORT_DESCRIPTOR pImportDesc, const std::string& libraryName) noexcept {
+  if (!pImportDesc || libraryName.empty()) {
+    return;
+  }
 
-    std::vector<std::string> collectedFuncs;
+  std::vector<std::string> collectedFuncs;
 
-    PIMAGE_THUNK_DATA pThunkILT = nullptr;
-    PIMAGE_THUNK_DATA pThunkIAT = nullptr;
-    PIMAGE_IMPORT_BY_NAME pIBName = nullptr;
+  PIMAGE_THUNK_DATA pThunkILT = nullptr;
+  PIMAGE_THUNK_DATA pThunkIAT = nullptr;
+  PIMAGE_IMPORT_BY_NAME pIBName = nullptr;
 
-    pThunkILT = PIMAGE_THUNK_DATA((PBYTE)dataLocal.pDOSHeader + pImportDesc->OriginalFirstThunk);
-    pThunkIAT = PIMAGE_THUNK_DATA((PBYTE)dataLocal.pDOSHeader + pImportDesc->FirstThunk);
+  pThunkILT = PIMAGE_THUNK_DATA((PBYTE)dataLocal.pDOSHeader + pImportDesc->OriginalFirstThunk);
+  pThunkIAT = PIMAGE_THUNK_DATA((PBYTE)dataLocal.pDOSHeader + pImportDesc->FirstThunk);
 
-    std::stringstream sstr;
+  std::stringstream sstr;
 
-    while (pThunkILT->u1.AddressOfData != 0) {
+  while (pThunkILT->u1.AddressOfData != 0) {
       
-      sstr.clear();
-      sstr.str(std::string());
+    sstr.clear();
+    sstr.str(std::string());
 
-      if (!(pThunkILT->u1.Ordinal & IMAGE_ORDINAL_FLAG)) {
-        pIBName = PIMAGE_IMPORT_BY_NAME((PBYTE)dataLocal.pDOSHeader + pThunkILT->u1.AddressOfData);
-        uint64_t functionOffsetFromBase = (uint64_t)pThunkIAT->u1.Function - (uint64_t)dataLocal.pBaseAddress;
-        sstr << pIBName->Name << "*" << serializeOffsetToString(functionOffsetFromBase);
-        collectedFuncs.emplace_back(sstr.str());
-      }
-      else if (IMAGE_ORDINAL(pThunkILT->u1.Ordinal)) {
-
-        sstr << "<Ordinal> " << (pThunkILT->u1.Function & 0xffff);
-        collectedFuncs.emplace_back(sstr.str());
-      }
-      pThunkILT++;
-      pThunkIAT++;
+    if (!(pThunkILT->u1.Ordinal & IMAGE_ORDINAL_FLAG)) {
+      pIBName = PIMAGE_IMPORT_BY_NAME((PBYTE)dataLocal.pDOSHeader + pThunkILT->u1.AddressOfData);
+      uint64_t functionOffsetFromBase = (uint64_t)pThunkIAT->u1.Function - (uint64_t)dataLocal.pBaseAddress;
+      sstr << pIBName->Name << "*" << serializeOffsetToString(functionOffsetFromBase);
+      collectedFuncs.emplace_back(sstr.str());
     }
+    else if (IMAGE_ORDINAL(pThunkILT->u1.Ordinal)) {
+      uint64_t functionOffsetFromBase = (uint64_t)pThunkIAT->u1.Function - (uint64_t)dataLocal.pBaseAddress;
+      sstr << "<Ordinal> " << (pThunkILT->u1.Function & 0xffff);// << "*" << serializeOffsetToString(functionOffsetFromBase);
+      collectedFuncs.emplace_back(sstr.str());
+    }
+    pThunkILT++;
+    pThunkIAT++;
+  }
 
-    if (!collectedFuncs.empty()) {
-      if (dataImport.functions.try_emplace(libraryName).second) {
-        dataImport.functions.at(libraryName) = std::move(collectedFuncs);
-      }
+  if (!collectedFuncs.empty()) {
+    if (dataImport.functions.try_emplace(libraryName).second) {
+      dataImport.functions.at(libraryName) = std::move(collectedFuncs);
     }
   }
 }

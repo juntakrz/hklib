@@ -1,7 +1,7 @@
 #include "pch.h"
 #include "dllfunc.h"
 
-LPVOID getIATEntry(std::string libraryName, std::string functionName) noexcept {
+LPVOID getIATEntry(const std::string& libraryName, const std::string& functionName) noexcept {
   if (libraryName == "" || functionName == "") {
     return nullptr;
   }

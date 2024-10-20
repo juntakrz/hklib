@@ -42,9 +42,7 @@ DWORD hkProcess::init() noexcept {
   pData = std::make_unique<BYTE[]>(bufSize);
   m_ctx.ContextFlags = CONTEXT_FULL;
 
-  if (!CreateProcessA(m_procPath.c_str(), NULL, NULL, NULL, TRUE,
-                      CREATE_SUSPENDED | CREATE_NO_WINDOW, NULL, NULL,
-                      &startupInfo, &procInfo)) {
+  if (!CreateProcessA(m_procPath.c_str(), NULL, NULL, NULL, TRUE, CREATE_SUSPENDED | CREATE_NO_WINDOW, NULL, NULL, &startupInfo, &procInfo)) {
     LOG(logError, "Failed to create process '%s'.", m_procPath);
     return GetLastError();
   }

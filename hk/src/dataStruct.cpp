@@ -2,10 +2,10 @@
 #include "appf.h"
 #include "datastruct.h"
 
-dtGlobal global;
-dtImport dataImport;
+DTGlobal global;
+DTImport dataImport;
 
-BOOL dtGlobal::addFunction(LPCSTR function) noexcept {
+BOOL DTGlobal::addFunction(LPCSTR function) noexcept {
   if (remoteFunctions.try_emplace(function).second) {
     remoteFunctions.at(function) = 0;
     return true;
@@ -14,7 +14,7 @@ BOOL dtGlobal::addFunction(LPCSTR function) noexcept {
   return false;
 }
 
-BOOL dtGlobal::removeFunction(LPCSTR function) noexcept {
+BOOL DTGlobal::removeFunction(LPCSTR function) noexcept {
   if (remoteFunctions.find(function) != remoteFunctions.end()) {
     remoteFunctions.erase(function);
     return true;
@@ -23,7 +23,7 @@ BOOL dtGlobal::removeFunction(LPCSTR function) noexcept {
   return false;
 }
 
-BOOL dtGlobal::storeOffset(LPCSTR function, DWORD offset) noexcept {
+BOOL DTGlobal::storeOffset(LPCSTR function, DWORD offset) noexcept {
   if (remoteFunctions.find(function) != remoteFunctions.end()) {
     remoteFunctions.at(function) = offset;
     return true;
@@ -32,13 +32,13 @@ BOOL dtGlobal::storeOffset(LPCSTR function, DWORD offset) noexcept {
   return false;
 }
 
-void dtGlobal::updateOffsets() noexcept {
+void DTGlobal::updateOffsets() noexcept {
   for (auto& it : remoteFunctions) {
     it.second = hk_dll::getExportOffset(it.first.c_str());
   }
 }
 
-DWORD dtGlobal::offsetOf(LPCSTR function) noexcept {
+DWORD DTGlobal::offsetOf(LPCSTR function) noexcept {
   if (remoteFunctions.find(function) != remoteFunctions.end()) {
     return remoteFunctions.at(function);
   }
@@ -48,7 +48,7 @@ DWORD dtGlobal::offsetOf(LPCSTR function) noexcept {
   return -1;
 }
 
-void dtImport::clear() noexcept {
+void DTImport::clear() noexcept {
   modules.clear();
   functions.clear();
 }

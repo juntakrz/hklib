@@ -2,7 +2,7 @@
 
 #include "define.h"
 
-struct dtGlobal {
+struct DTGlobal {
   DWORD PID = 0;
 
   HANDLE hProcess = NULL;
@@ -25,15 +25,15 @@ struct dtGlobal {
   DWORD offsetOf(LPCSTR function) noexcept;
 };
 
-struct SFuncData {
+struct FunctionData {
   std::string sName = "";
   DWORD dwOffset = 0;
   DWORD dwDataSize = 0;
 };
 
-struct dtImport {
+struct DTImport {
   std::vector<std::string> modules;
-  std::map<std::string, std::vector<SFuncData>> functionsEx;
+  std::map<std::string, std::vector<FunctionData>> functionsEx;
 
   std::map<std::string, std::vector<std::string>> functions;  // to be replaced with functionsEx data structure
 
@@ -50,5 +50,5 @@ struct hkShellCode {
   }
 };
 
-extern dtGlobal global;
-extern dtImport dataImport;
+extern DTGlobal global;
+extern DTImport dataImport;

@@ -203,8 +203,20 @@ void presentAnalysisResults() noexcept {
 
       if (!dataImport.functions.empty() && findResult) {
         for (const std::string& itFunctionName : dataImport.functions.at(itModuleName)) {
-          query = isWinAPI(itModuleName, itFunctionName);
-          query ? printf("\t*  |= %s\n", itFunctionName.c_str()) : printf("\t   |= %s\n", itFunctionName.c_str());
+          std::string functionName;
+          uint64_t functionOffset = -1;
+          query = isWinAPI(itModuleName, functionName);
+
+          bool isDeserializationSuccessful = hk_util::deserializeImportedFunctionName(itFunctionName, functionName, functionOffset);
+
+          if (isDeserializationSuccessful) {
+            query ? printf("\t*  |= %s, offset %llu\n", functionName.c_str(), functionOffset)
+                  : printf("\t   |= %s, offset %llu\n", functionName.c_str(), functionOffset);
+          }
+          else {
+            query ? printf("\t*  |= %s\n", functionName.c_str())
+                  : printf("\t   |= %s\n", functionName.c_str());
+          }
         }
       }
         

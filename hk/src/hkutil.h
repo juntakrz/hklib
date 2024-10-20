@@ -63,4 +63,6 @@ DWORD setLocalPrivilege(LPCSTR lpszPrivilege, bool enable = true) noexcept;
 void processLogMessage(bool newLine, char level, const wchar_t* logMessage, ...) noexcept;
 void toWString(LPCSTR inString, std::wstring& outWString);
 
+bool deserializeImportedFunctionName(const std::string& inSerializedFunctionName, std::string& outFunctionName, uint64_t& outAddress);
+
 }  // namespace util

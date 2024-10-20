@@ -118,7 +118,7 @@ std::string serializeOffsetToString(uint64_t offset) {
     BYTE value = pOffset[byteIndex];
 
     if (value == 0u) {
-      ++value;
+      value = 1;
       zeroByteFlags |= 1 << byteIndex;
     }
 

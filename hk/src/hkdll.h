@@ -2,8 +2,11 @@
 
 namespace hk_dll {
 
-void inject(DWORD PID = 0) noexcept;    // injects DLL and fills global variables
-void eject() noexcept;                  // ejects DLL from the target process
+// injects DLL and fills global variables
+void inject(DWORD PID = 0) noexcept;
+
+// ejects DLL from the target process
+void eject() noexcept;
 
 /*
  * Calls function of an injected DLL.
@@ -13,8 +16,9 @@ void eject() noexcept;                  // ejects DLL from the target process
  */
 DWORD call(LPCSTR function, HANDLE& outHThread, DWORD& outIdThread, DWORD flags = 0, PBYTE pArg = nullptr, DWORD sizeArg = 0) noexcept;
 
-uint64_t getBaseAddr() noexcept;        // base address of the injected DLL
-DWORD getExportOffset(
-    LPCSTR funcName) noexcept;          // address of declared export function
-                                        // (requires inject() first)
+// base address of the injected DLL
+uint64_t getBaseAddr() noexcept;
+
+// address of declared export function (requires inject() first)
+DWORD getExportOffset(LPCSTR funcName) noexcept;
 }  // namespace hk_dll

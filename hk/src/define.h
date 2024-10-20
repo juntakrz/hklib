@@ -17,6 +17,7 @@ constexpr char logError = 2;
 
 #define NULL_THREAD *((HANDLE*)0)
 #define NULL_ID *((DWORD*)0)
+#define SERIALIZED_DELIMITER '*'
 
 enum callFlags {
   CALL_NORMAL		= 0,		// standard call

@@ -61,8 +61,7 @@ DWORD hk_util::setLocalPrivilege(LPCSTR lpszPrivilege, bool enable) noexcept {
     return GetLastError();
   };
 
-  if (!OpenProcessToken(GetCurrentProcess(),
-                        TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY, &hToken)) {
+  if (!OpenProcessToken(GetCurrentProcess(), TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY, &hToken)) {
     return fError();
   }
 
@@ -74,9 +73,7 @@ DWORD hk_util::setLocalPrivilege(LPCSTR lpszPrivilege, bool enable) noexcept {
   tokenNewState.Privileges[0].Luid = luidPriv;
   tokenNewState.Privileges[0].Attributes = privStatus;
 
-  if (!AdjustTokenPrivileges(hToken, FALSE, &tokenNewState,
-                             sizeof(TOKEN_PRIVILEGES), nullptr, nullptr) ||
-      GetLastError() == ERROR_NOT_ALL_ASSIGNED) {
+  if (!AdjustTokenPrivileges(hToken, FALSE, &tokenNewState, sizeof(TOKEN_PRIVILEGES), nullptr, nullptr) || GetLastError() == ERROR_NOT_ALL_ASSIGNED) {
     return fError();
   }
 
@@ -117,4 +114,50 @@ void hk_util::toWString(LPCSTR inString, std::wstring& outWString) {
   const int32_t bufferSize = MultiByteToWideChar(CP_ACP, 0, inString, -1, NULL, 0);
   outWString.resize(bufferSize);
   MultiByteToWideChar(CP_ACP, 0, inString, -1, &outWString[0], bufferSize);
+}
+
+bool hk_util::deserializeImportedFunctionName(const std::string& inSerializedFunctionName, std::string& outFunctionName, uint64_t& outAddress) {
+  if (inSerializedFunctionName.empty()) {
+    return false;
+  }
+
+  const size_t delimiterLocation = inSerializedFunctionName.find_first_of(SERIALIZED_DELIMITER);
+
+  if (delimiterLocation == std::string::npos) {
+    outFunctionName = inSerializedFunctionName;
+    return false;
+  }
+
+  outFunctionName = std::string(inSerializedFunctionName.begin(), inSerializedFunctionName.begin() + delimiterLocation);
+
+  const size_t stringSize = inSerializedFunctionName.size();
+  
+  // 10 bytes are used to serialize address in the import stream, anything not equal to that is invalid data
+  // (delimiter + 8 bytes of address (64 bit OS) + 1 bitmask byte
+  if (stringSize - delimiterLocation != sizeof(void*) + 2) {
+    return false;
+  }
+
+  uint64_t addressValue = 0u;
+  uint8_t byteMask = 0u;
+
+  memcpy(&addressValue, &inSerializedFunctionName.c_str()[delimiterLocation + 1], sizeof(void*));
+  memcpy(&byteMask, &inSerializedFunctionName.c_str()[stringSize - 1], sizeof(uint8_t));
+
+  // Check if any bytes should actually be zero - this was to avoid null-terminated strings when serialized and exported
+  if (byteMask != NULL && byteMask != 0xFF) {
+    for (uint8_t maskIndex = 0; maskIndex < sizeof(void*); ++maskIndex) {
+
+      // If bitflag is ticked - that means this address byte is actually 0
+      bool isOriginalByteZero = byteMask & (1 << maskIndex);
+
+      if (isOriginalByteZero) {
+        ((uint8_t*)&addressValue)[maskIndex] = 0;
+      }
+    }
+  }
+
+  outAddress = addressValue;
+
+  return true;
 }
