@@ -33,12 +33,6 @@
     <ClCompile Include="src\hkutil.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\unused\CBuffer.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\unused\pe.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\hklocal.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -46,6 +40,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\hkprocess.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\hkfunc.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -65,12 +62,6 @@
     <ClInclude Include="src\datastruct.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\unused\CBuffer.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\unused\pe.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="src\hklocal.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -78,6 +69,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\hkprocess.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\hkfunc.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

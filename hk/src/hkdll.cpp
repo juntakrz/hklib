@@ -1,8 +1,8 @@
 #include "pch.h"
-#include "define.h"
 #include "hkdll.h"
 #include "datastruct.h"
 #include "hkutil.h"
+#include "hkfunc.h"
 
 void hk_dll::inject(DWORD PID) noexcept {
   if (!PID) {
@@ -12,14 +12,14 @@ void hk_dll::inject(DWORD PID) noexcept {
 
   // init variables
   DWORD idThread = 0;
-  SIZE_T bytesWritten = 0;
+  size_t bytesWritten = 0;
 
   // replace globally stored PID if a new one is provided, else use globally
   // stored PID
   (PID) ? global.PID = PID : PID = global.PID;
 
   global.dllRelativePath = TEXT("hklib.dll");
-  global.dllFullPath = hk_util::fullPath(global.dllRelativePath.c_str());
+  global.dllFullPath = util::fullPath(global.dllRelativePath.c_str());
   std::string moduleName = "Kernel32.dll";
   std::string funcName = "LoadLibraryA";
 
@@ -39,8 +39,10 @@ void hk_dll::inject(DWORD PID) noexcept {
   LOG(logOK, "Injecting '%ls' from '%ls'.", global.dllRelativePath.c_str(), global.dllFullPath.c_str());
 
   global.hProcess = OpenProcess(PROCESS_ALL_ACCESS, FALSE, PID);
-  global.pAllocatedAddress = VirtualAllocEx(global.hProcess, NULL, dllFullPathA.size(), MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
-  WriteProcessMemory(global.hProcess, global.pAllocatedAddress, (LPCVOID)dllFullPathA.c_str(), dllFullPathA.size(), &bytesWritten);
+  global.pAllocatedAddress = nullptr;
+  size_t regionSize = dllFullPathA.size();
+  hkAllocateVirtualMemory(global.hProcess, &global.pAllocatedAddress, 0, &regionSize, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+  hkWriteVirtualMemory(global.hProcess, global.pAllocatedAddress, (LPVOID)dllFullPathA.c_str(), dllFullPathA.size(), &bytesWritten);
 
   ERRCHK;
 
@@ -82,15 +84,16 @@ DWORD hk_dll::call(LPCSTR function, HANDLE& outHThread, DWORD& outIdThread, DWOR
   LPVOID lpArgAddress = nullptr;
 
   std::wstring wideFunctionName;
-  hk_util::toWString(function, wideFunctionName);
+  util::toWString(function, wideFunctionName);
 
   LOG(logOK, "Calling function '%ls'.", wideFunctionName.c_str());
 
   lpTSR = LPTHREAD_START_ROUTINE(global.dllBaseAddr + global.offsetOf(function));
 
   if (pArg && sizeArg) {
-    lpArgAddress = VirtualAllocEx(global.hProcess, NULL, global.dllFullPath.size(), MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
-    WriteProcessMemory(global.hProcess, lpArgAddress, (LPCVOID)pArg, sizeArg, NULL);
+    size_t regionSize = global.dllFullPath.size();
+    hkAllocateVirtualMemory(global.hProcess, &lpArgAddress, 0, &regionSize, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+    hkWriteVirtualMemory(global.hProcess, lpArgAddress, (LPVOID)pArg, sizeArg, NULL);
   }
 
   if (lpTSR) {

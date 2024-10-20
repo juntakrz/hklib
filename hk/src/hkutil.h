@@ -1,6 +1,6 @@
 #pragma once
 
-namespace hk_util {
+namespace util {
 
 extern BYTE shellCode[];
 extern size_t shellCodeSize;
@@ -57,7 +57,7 @@ std::string fullPath(const char* relativePath) noexcept;
 std::wstring fullPath(const wchar_t* relativePath) noexcept;
 
 // general
-FARPROC procAddr(LPCSTR lpModuleName, LPCSTR lpProcName) noexcept;
+FARPROC getFunctionAddress(LPCSTR lpModuleName, LPCSTR lpProcName) noexcept;
 DWORD setLocalPrivilege(LPCSTR lpszPrivilege, bool enable = true) noexcept;
 
 void processLogMessage(bool newLine, char level, const wchar_t* logMessage, ...) noexcept;

@@ -2,7 +2,7 @@
 #include "define.h"
 #include "hkutil.h"
 
-BYTE hk_util::shellCode[] = "\x48\x83\xEC\x28\x48\x83\xE4\xF0\x48\x8D\x15\x66\x00\x00\x00"
+BYTE util::shellCode[] = "\x48\x83\xEC\x28\x48\x83\xE4\xF0\x48\x8D\x15\x66\x00\x00\x00"
       "\x48\x8D\x0D\x52\x00\x00\x00\xE8\x9E\x00\x00\x00\x4C\x8B\xF8"
       "\x48\x8D\x0D\x5D\x00\x00\x00\xFF\xD0\x48\x8D\x15\x5F\x00\x00"
       "\x00\x48\x8D\x0D\x4D\x00\x00\x00\xE8\x7F\x00\x00\x00\x4D\x33"
@@ -32,25 +32,25 @@ BYTE hk_util::shellCode[] = "\x48\x83\xEC\x28\x48\x83\xE4\xF0\x48\x8D\x15\x66\x0
       "\x4C\x4C\x00\x49\x8B\xCC\x41\xFF\xD7\x49\x8B\xCC\x48\x8B\xD6"
     "\xE9\x14\xFF\xFF\xFF\x48\x03\xC3\x48\x83\xC4\x28\xC3";
 
-size_t hk_util::shellCodeSize = sizeof(hk_util::shellCode);
+size_t util::shellCodeSize = sizeof(util::shellCode);
 
-std::string hk_util::fullPath(const char* relativePath) noexcept {
+std::string util::fullPath(const char* relativePath) noexcept {
   char buffer[MAX_PATH] = {};
   GetFullPathNameA(relativePath, MAX_PATH, buffer, nullptr);
   return buffer;
 }
 
-std::wstring hk_util::fullPath(const wchar_t* relativePath) noexcept {
+std::wstring util::fullPath(const wchar_t* relativePath) noexcept {
   wchar_t wbuffer[MAX_PATH] = {};
   GetFullPathNameW(relativePath, MAX_PATH, wbuffer, nullptr);
   return wbuffer;
 }
 
-FARPROC hk_util::procAddr(LPCSTR lpModuleName, LPCSTR lpProcName) noexcept {
+FARPROC util::getFunctionAddress(LPCSTR lpModuleName, LPCSTR lpProcName) noexcept {
   return GetProcAddress(GetModuleHandleA(lpModuleName), lpProcName);
 }
 
-DWORD hk_util::setLocalPrivilege(LPCSTR lpszPrivilege, bool enable) noexcept {
+DWORD util::setLocalPrivilege(LPCSTR lpszPrivilege, bool enable) noexcept {
   HANDLE hToken = NULL;
   LUID luidPriv{};
   TOKEN_PRIVILEGES tokenNewState{};
@@ -81,7 +81,7 @@ DWORD hk_util::setLocalPrivilege(LPCSTR lpszPrivilege, bool enable) noexcept {
   return 0;  // SUCCESS
 }
 
-void hk_util::processLogMessage(bool newLine, char level, const wchar_t* logMessage, ...) noexcept {
+void util::processLogMessage(bool newLine, char level, const wchar_t* logMessage, ...) noexcept {
   const size_t bufferSize = 256u;
   wchar_t buffer[bufferSize];
   va_list args;
@@ -110,13 +110,13 @@ void hk_util::processLogMessage(bool newLine, char level, const wchar_t* logMess
   }
 }
 
-void hk_util::toWString(LPCSTR inString, std::wstring& outWString) {
+void util::toWString(LPCSTR inString, std::wstring& outWString) {
   const int32_t bufferSize = MultiByteToWideChar(CP_ACP, 0, inString, -1, NULL, 0);
   outWString.resize(bufferSize);
   MultiByteToWideChar(CP_ACP, 0, inString, -1, &outWString[0], bufferSize);
 }
 
-bool hk_util::deserializeImportedFunctionName(const std::string& inSerializedFunctionName, std::string& outFunctionName, uint64_t& outAddress) {
+bool util::deserializeImportedFunctionName(const std::string& inSerializedFunctionName, std::string& outFunctionName, uint64_t& outAddress) {
   if (inSerializedFunctionName.empty()) {
     return false;
   }

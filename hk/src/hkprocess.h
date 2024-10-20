@@ -5,16 +5,6 @@ class hkProcess {
   std::string m_procPath = "";
   CONTEXT m_ctx{};
 
-  TCreateProcess hkCreateProcess =
-      (TCreateProcess)hk_util::procAddr("ntdll", "NtCreateProcess");
-  TQueryInformationProcess hkQueryInformationProcess =
-      (TQueryInformationProcess)hk_util::procAddr("ntdll",
-                                                  "NtQueryInformationProcess");
-  TSetContextThread hkSetContextThread =
-      (TSetContextThread)hk_util::procAddr("ntdll", "NtSetContextThread");
-  TGetContextThread hkGetContextThread =
-      (TGetContextThread)hk_util::procAddr("ntdll", "NtGetContextThread");
-
   DWORD init() noexcept;						// read, store and process values from process header
  public:
   //PROCESS_INFORMATION clone structure

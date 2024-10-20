@@ -1,7 +1,7 @@
 #include "pch.h"
-#include "hkutil.h"
-#include "define.h"
+#include "hkfunc.h"
 #include "hkprocess.h"
+#include "hkutil.h"
 
 hkProcess::hkProcess(const char* procPath) : m_procPath(procPath) {
   DWORD errorCode = 0;      // 0 = no error
@@ -33,8 +33,7 @@ DWORD hkProcess::init() noexcept {
   PROCESS_INFORMATION procInfo{};
   PROCESS_BASIC_INFORMATION procBasicInfo{};
 
-  SIZE_T bufSize =
-      4096;  // 4 KB should be enough to read all the required header data
+  SIZE_T bufSize = 4096;  // 4 KB should be enough to read all the required header data
   SIZE_T bytesRead = 0;
   DWORD lastError = 0;
   DWORD64 PEBImageOffset = 0;

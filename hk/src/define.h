@@ -2,8 +2,8 @@
 
 #include "pch.h"
 
-#define LOG(l, x, ...) hk_util::processLogMessage(true, l, TEXT(x), __VA_ARGS__)
-#define LOGn(l, x, ...) hk_util::processLogMessage(false, l, TEXT(x), __VA_ARGS__)
+#define LOG(l, x, ...) util::processLogMessage(true, l, TEXT(x), __VA_ARGS__)
+#define LOGn(l, x, ...) util::processLogMessage(false, l, TEXT(x), __VA_ARGS__)
 #define ASSERT(x) \
   if (!(x)) __debugbreak();
 
@@ -29,7 +29,7 @@ enum callFlags {
 /* WinAPI internal function ptr aliases (should work for both Nt* and Zw* functions)
 * EXAMPLE:
 * HANDLE hProcess = <some target process>
-* TSuspendProcess hkSuspendProcess = (TSuspendProcess)hk_util::procAddr("ntdll", "NtSuspendProcess");
+* TSuspendProcess hkSuspendProcess = (TSuspendProcess)util::getFunctionAddress("ntdll", "NtSuspendProcess");
 * hkSuspendProcess(hProcess);
 */
 using TCreateProcess = NTSTATUS(NTAPI *)(
@@ -72,6 +72,12 @@ using TCreateUserThread =
 
 using TSuspendProcess = NTSTATUS(NTAPI *)(IN HANDLE ProcessHandle);
 using TResumeProcess = NTSTATUS(NTAPI *)(IN HANDLE ProcessHandle);
+
+using TAllocateVirtualMemory = NTSTATUS(NTAPI*)(HANDLE ProcessHandle, PVOID* BaseAddress,
+                               ULONG_PTR ZeroBits, PSIZE_T RegionSize,
+                               ULONG AllocationType, ULONG Protect);
+
+using TWriteVirtualMemory = NTSTATUS(NTAPI*)(HANDLE ProcessHandle, LPVOID BaseAddress, LPVOID Buffer, SIZE_T BufferSize, PSIZE_T NumberOfBytesWritten);
 
 /* * */
 

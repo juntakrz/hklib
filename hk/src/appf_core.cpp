@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "appf.h"
 #include "dataStruct.h"
+#include "hkfunc.h"
 
 void printHelp() noexcept {
   printf("USAGE:  hk [process name / id] [-arguments]\n\n");
@@ -22,6 +23,7 @@ int parseArgs(int argc, wchar_t* argv[]) {
   }
 
   global.dllName = TEXT("hklib.dll");
+  initializeWinAPIFunctions();
 
   DWORD PID;
   const std::wregex rNumbers(L"0-9");
@@ -140,14 +142,14 @@ void testShellCode() noexcept {
                     0xC1, 0xE8, 0x1F, 0x41, 0x03, 0xD0, 0x03, 0xC2, 0xC3, 0x00};
                     */
 
-  for (size_t i = 0; i < hk_util::shellCodeSize; i++) {
-    std::cout << std::hex << std::uppercase << ((*(hk_util::shellCode + i) < 16) ? "0" : "") << +*(hk_util::shellCode + i) << " ";
+  for (size_t i = 0; i < util::shellCodeSize; i++) {
+    std::cout << std::hex << std::uppercase << ((*(util::shellCode + i) < 16) ? "0" : "") << +*(util::shellCode + i) << " ";
   }
   std::cout << std::dec << "\n\n";
 
   int x = 5, y = 1000;
-  void* exec = VirtualAlloc(0, hk_util::shellCodeSize, MEM_COMMIT, PAGE_EXECUTE_READWRITE);
-  memcpy(exec, hk_util::shellCode, hk_util::shellCodeSize);
+  void* exec = VirtualAlloc(0, util::shellCodeSize, MEM_COMMIT, PAGE_EXECUTE_READWRITE);
+  memcpy(exec, util::shellCode, util::shellCodeSize);
   /*int result =
       ((int (*)(int, int))exec)(x, y);  // that C/C++ function casting, oh boy
 
@@ -205,9 +207,9 @@ void presentAnalysisResults() noexcept {
         for (const std::string& itFunctionName : dataImport.functions.at(itModuleName)) {
           std::string functionName;
           uint64_t functionOffset = -1;
-          query = isWinAPI(itModuleName, functionName);
 
-          bool isDeserializationSuccessful = hk_util::deserializeImportedFunctionName(itFunctionName, functionName, functionOffset);
+          bool isDeserializationSuccessful = util::deserializeImportedFunctionName(itFunctionName, functionName, functionOffset);
+          query = isWinAPI(itModuleName, functionName);
 
           if (isDeserializationSuccessful) {
             query ? printf("\t*  |= %s, offset %llu\n", functionName.c_str(), functionOffset)
@@ -220,8 +222,7 @@ void presentAnalysisResults() noexcept {
         }
       }
         
-      if (findResult)
-      {
+      if (findResult) {
         totalMethodCount += dataImport.functions.at(itModuleName).size();
       }
 
