@@ -46,7 +46,11 @@ void hk_dll::inject(DWORD PID) noexcept {
 
   ERRCHK;
 
-  global.hTInject = CreateRemoteThread(global.hProcess, NULL, NULL, LLAddr,global.pAllocatedAddress, NULL, &global.TID);
+  const ULONG stackCommit = 0x1000; // Default stack commit size
+  const ULONG stackReserve = 0x10000; // Default stack reserve size
+
+  hkCreateThreadEx(&global.hTInject, THREAD_ALL_ACCESS, NULL, global.hProcess, LLAddr, global.pAllocatedAddress, FALSE, 0, stackCommit, stackReserve, NULL);
+  global.TID = GetThreadId(global.hTInject);
 
   WaitForSingleObject(global.hTInject, INFINITE);
 
