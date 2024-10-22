@@ -78,3 +78,4 @@ extern size_t decryptionIndex;
 void initializeWinAPIFunctions();
 std::string decryptString(const uint8_t* inEncryptedArray, const size_t inArraySize);
 void resetDecryptionIndex();
+void* offsetToFunction(void* pLibrary, const uint64_t offset);

@@ -101,7 +101,11 @@ DWORD hk_dll::call(LPCSTR function, HANDLE& outHThread, DWORD& outIdThread, DWOR
   }
 
   if (lpTSR) {
-    hThread = CreateRemoteThread(global.hProcess, NULL, NULL, lpTSR, lpArgAddress, NULL, &idThread);
+    const ULONG stackCommit = 0x1000; // Default stack commit size
+    const ULONG stackReserve = 0x10000; // Default stack reserve size
+
+    hkCreateThreadEx(&hThread, THREAD_ALL_ACCESS, NULL, global.hProcess, lpTSR, global.pAllocatedAddress, FALSE, 0, stackCommit, stackReserve, NULL);
+    idThread = GetThreadId(hThread);
 
     if (!hThread) {
       return -1;
