@@ -73,5 +73,8 @@ extern TSuspendProcess hkSuspendProcess;
 extern TUnmapViewOfSection hkUnmapViewOfSection;
 extern TWriteVirtualMemory hkWriteVirtualMemory;
 
+extern size_t decryptionIndex;
+
 void initializeWinAPIFunctions();
-std::string decryptFunctionName(const uint8_t* inEncryptedArray, const size_t inArraySize);
+std::string decryptString(const uint8_t* inEncryptedArray, const size_t inArraySize);
+void resetDecryptionIndex();

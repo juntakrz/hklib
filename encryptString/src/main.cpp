@@ -54,6 +54,8 @@ void readFile(const std::string& fileName) {
 }
 
 void encryptStrings() {
+  size_t stringIndex = 0;
+
   for (const std::string& currentString : sourceStrings) {
     std::string encryptedString = "";
     const size_t stringSize = currentString.size();
@@ -61,11 +63,16 @@ void encryptStrings() {
 
     for (size_t stringPosition = 0; stringPosition < stringSize; ++stringPosition) {
       const uint8_t* pEncryptionKey = (uint8_t*)&encryptionKey;
-      const uint8_t encryptionByte = pEncryptionKey[stringPosition % sizeof(uint64_t)];
+      uint8_t encryptionByte = pEncryptionKey[stringPosition % sizeof(uint64_t)];
+
       encryptedString[stringPosition] = currentString[stringPosition] ^ encryptionByte;
+
+      encryptionByte = pEncryptionKey[(stringPosition + stringSize + stringIndex * 3) % sizeof(uint64_t)] << 1;
+      encryptedString[stringPosition] ^= encryptionByte;
     }
 
     encryptedStrings.emplace_back(encryptedString);
+    ++stringIndex;
   }
 }
 
@@ -77,8 +84,11 @@ void saveFile(const std::string& fileName) {
     exit(2);
   }
 
+  uint8_t stringIndex = 0;
+
   for (const std::string& currentString : encryptedStrings) {
-    file << currentString << "\xFF\xFF\xF7\xF7\xFF";
+    file << "\xFF\xFF" << stringIndex << "\xFF\xFF" << currentString;
+    ++stringIndex;
   }
 
   file.close();
